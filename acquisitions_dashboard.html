@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acquisitions Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #D94040;
+    --green: #4A8C3F;
+    --yellow: #E8A020;
+    --bg: #0F1117;
+    --surface: #181B24;
+    --surface2: #1E2230;
+    --border: #2A2E3E;
+    --text: #E8EAF0;
+    --text-muted: #7A7F96;
+    --accent: #3B7DD8;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TOP NAV */
+  .topnav { display: flex; align-items: center; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 48px; flex-shrink: 0; }
+  .brand { font-family: var(--mono); font-size: 13px; color: var(--text-muted); letter-spacing: 0.08em; margin-right: 32px; }
+  .brand span { color: var(--accent); }
+  .tab-btn { padding: 0 18px; height: 48px; border: none; background: none; color: var(--text-muted); font-family: var(--font); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .sync-btn { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--accent); border: none; border-radius: 6px; color: #fff; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .sync-btn:hover { opacity: 0.85; }
+  .sync-btn.syncing { opacity: 0.6; pointer-events: none; }
+  .last-sync { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+  /* MAIN CONTENT */
+  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .view { display: none; flex: 1; overflow: hidden; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; flex-shrink: 0; }
+  .filter-label { font-size: 11px; color: var(--text-muted); font-family: var(--mono); letter-spacing: 0.06em; }
+  .filter-group { display: flex; gap: 4px; }
+  .filter-chip { padding: 4px 12px; font-size: 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+  .divider { width: 1px; height: 20px; background: var(--border); }
+  .status-select { padding: 4px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font); cursor: pointer; }
+  .status-select option { background: var(--surface2); }
+  .map-stats { margin-left: auto; display: flex; gap: 14px; }
+  .map-stat { font-size: 11px; font-family: var(--mono); }
+  .map-stat .val { color: var(--text); font-weight: 500; }
+  .map-stat .lbl { color: var(--text-muted); }
+
+  /* MAP */
+  .map-wrap { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; }
+  .map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10; flex-direction: column; gap: 12px; }
+  .map-loading .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .map-loading p { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+
+  /* LEGEND */
+  .map-legend { position: absolute; bottom: 28px; left: 12px; background: rgba(15,17,23,0.92); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; z-index: 5; backdrop-filter: blur(8px); }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+  .legend-row:last-child { margin-bottom: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+
+  /* DASHBOARD */
+  .dashboard { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  .dash-section-title { font-size: 11px; font-family: var(--mono); color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .metric-card.red::before { background: var(--red); }
+  .metric-card.green::before { background: var(--green); }
+  .metric-card.blue::before { background: var(--accent); }
+  .metric-card.yellow::before { background: var(--yellow); }
+  .metric-val { font-size: 32px; font-weight: 600; line-height: 1; margin-bottom: 6px; }
+  .metric-val.red { color: var(--red); }
+  .metric-val.green { color: var(--green); }
+  .metric-val.blue { color: var(--accent); }
+  .metric-val.yellow { color: var(--yellow); }
+  .metric-lbl { font-size: 12px; color: var(--text-muted); }
+
+  .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .dash-row { grid-template-columns: 1fr; } }
+
+  .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dash-table th { text-align: left; padding: 6px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 400; font-family: var(--mono); font-size: 11px; }
+  .dash-table td { padding: 8px 8px; border-bottom: 1px solid rgba(42,46,62,0.5); color: var(--text); vertical-align: top; }
+  .dash-table tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-family: var(--mono); }
+  .badge-red { background: rgba(217,64,64,0.15); color: #F08080; border: 1px solid rgba(217,64,64,0.3); }
+  .badge-green { background: rgba(74,140,63,0.15); color: #7EC472; border: 1px solid rgba(74,140,63,0.3); }
+  .badge-yellow { background: rgba(232,160,32,0.15); color: #F0C060; border: 1px solid rgba(232,160,32,0.3); }
+  .badge-gray { background: rgba(122,127,150,0.15); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .owner-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .owner-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .owner-name { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .owner-stat { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; font-family: var(--mono); }
+  .owner-stat span { color: var(--red); }
+
+  .no-data { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+
+  /* Info window override */
+  .gm-style .gm-style-iw-c { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; padding: 0 !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
+  .gm-style .gm-style-iw-d { overflow: hidden !important; }
+  .gm-style .gm-style-iw-t::after { display: none !important; }
+  .gm-style button.gm-ui-hover-effect { top: 4px !important; right: 4px !important; }
+  .gm-style button.gm-ui-hover-effect img { display: none !important; }
+  .gm-style button.gm-ui-hover-effect::after { content: '×'; color: var(--text-muted); font-size: 18px; line-height: 1; }
+
+  .iw-body { padding: 14px 16px; min-width: 220px; max-width: 300px; }
+  .iw-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; padding-right: 20px; }
+  .iw-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; font-size: 11px; }
+  .iw-label { color: var(--text-muted); font-family: var(--mono); }
+  .iw-val { color: var(--text); text-align: right; max-width: 160px; }
+  .iw-notes { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; max-height: 80px; overflow-y: auto; }
+
+  .error-banner { background: rgba(217,64,64,0.1); border: 1px solid rgba(217,64,64,0.3); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #F08080; margin: 12px 16px; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">ACQUISITIONS <span>//</span> V1</div>
+  <button class="tab-btn active" onclick="showView('map',this)">Map</button>
+  <button class="tab-btn" onclick="showView('dashboard',this)">Dashboard</button>
+  <div class="nav-right">
+    <span class="last-sync" id="lastSync">Not synced</span>
+    <button class="sync-btn" id="syncBtn" onclick="loadData()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      Sync from Sheets
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- MAP VIEW -->
+  <div class="view active" id="view-map">
+    <div class="toolbar">
+      <span class="filter-label">ASSIGNED</span>
+      <div class="filter-group">
+        <button class="filter-chip active" onclick="setFilter('assigned','all',this)">All</button>
+        <button class="filter-chip" onclick="setFilter('assigned','Sheet11',this)">Lance</button>
+        <button class="filter-chip" onclick="setFilter('assigned','Alex',this)">Alex</button>
+      </div>
+      <div class="divider"></div>
+      <span class="filter-label">STATUS</span>
+      <select class="status-select" id="statusFilter" onchange="applyFilters()">
+        <option value="all">All Statuses</option>
+      </select>
+      <div class="map-stats">
+        <div class="map-stat"><span class="val" id="stat-showing">—</span> <span class="lbl">shown</span></div>
+        <div class="map-stat"><span class="val" id="stat-pastdue" style="color:var(--red)">—</span> <span class="lbl">past due</span></div>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <div class="map-loading" id="mapLoading">
+        <div class="spinner"></div>
+        <p>Waiting for data sync...</p>
+      </div>
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div>Past due follow-up</div>
+        <div class="legend-row"><div class="legend-dot" style="background:var(--green)"></div>Follow-up current</div>
+        <div class="legend-row"><div class="legend-dot" style="background:var(--text-muted)"></div>No date set</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view" id="view-dashboard">
+    <div class="dashboard" id="dashboardContent">
+      <div class="no-data">Sync data to view dashboard</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const SHEET_ID = '1gnojvGasP1GGSxse3SNIXZSt_rk7tHJ1Vjsnhcwtz-A';
+const SHEETS = ['Sheet11', 'Alex']; // tab name = assigned person name
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q'; // user must replace
+
+// Column indices (0-based) — adjust if sheet changes
+const COL = {
+  name: 0,       // A - Facility Name
+  address: 1,    // B - Facility Address
+  owner: 2,      // C - Owner Name
+  phone: 3,      // D - Phone
+  email: 4,      // E - Email
+  sqft: 5,       // F - Estimated Sqft
+  website: 6,    // G - Website?
+  lastContact: 7,// H - Date Last Contact
+  contactWas: 8, // I - Last Contact Was
+  followUp: 9,   // J - Next Follow Up Date
+  status: 10,    // K - Status
+  notes: 11,     // M - Notes (index 11 = col L... adjust if needed)
+  xmas: 12       // N - 2026 Xmas Gift Sent
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allFacilities = [];
+let markers = [];
+let map = null;
+let geocoder = null;
+let infoWindow = null;
+let filters = { assigned: 'all', status: 'all' };
+let geocodeQueue = [];
+let geocodeIndex = 0;
+let mapsReady = false;
+
+// ─── DATA LOADING ─────────────────────────────────────────────────────────────
+async function loadData() {
+  const btn = document.getElementById('syncBtn');
+  btn.classList.add('syncing');
+  btn.querySelector('span') && (btn.querySelector('span').textContent = 'Syncing...');
+  allFacilities = [];
+
+  try {
+    for (const sheet of SHEETS) {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+      const rows = json.table.rows;
+      rows.forEach(row => {
+        if (!row.c[COL.name] || !row.c[COL.name].v) return;
+        const get = (i) => row.c[i] ? (row.c[i].f || row.c[i].v || '') : '';
+        allFacilities.push({
+          name: get(COL.name),
+          address: get(COL.address),
+          owner: get(COL.owner),
+          phone: get(COL.phone),
+          email: get(COL.email),
+          sqft: get(COL.sqft),
+          lastContact: get(COL.lastContact),
+          contactWas: get(COL.contactWas),
+          followUp: get(COL.followUp),
+          status: get(COL.status),
+          notes: get(COL.notes),
+          xmas: get(COL.xmas),
+          assigned: sheet,
+          lat: null, lng: null
+        });
+      });
+    }
+
+    populateStatusFilter();
+    buildDashboard();
+    document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+
+    if (mapsReady) {
+      startGeocoding();
+    } else {
+      document.getElementById('mapLoading').querySelector('p').textContent = 'Loading map...';
+    }
+  } catch(e) {
+    console.error(e);
+    showError('Failed to load sheet data. Make sure the sheet is shared publicly (Anyone with link → Viewer). Error: ' + e.message);
+  }
+
+  btn.classList.remove('syncing');
+}
+
+function populateStatusFilter() {
+  const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s && s.trim()))].sort();
+  const sel = document.getElementById('statusFilter');
+  sel.innerHTML = '<option value="all">All Statuses</option>';
+  statuses.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}
+
+// ─── GEOCODING ────────────────────────────────────────────────────────────────
+function startGeocoding() {
+  document.getElementById('mapLoading').style.display = 'flex';
+  document.getElementById('mapLoading').querySelector('p').textContent = 'Geocoding addresses...';
+  const toGeocode = allFacilities.filter(f => f.address && !f.lat);
+  geocodeQueue = toGeocode;
+  geocodeIndex = 0;
+  processNextGeocode();
+}
+
+function processNextGeocode() {
+  if (geocodeIndex >= geocodeQueue.length) {
+    document.getElementById('mapLoading').style.display = 'none';
+    applyFilters();
+    return;
+  }
+  const f = geocodeQueue[geocodeIndex];
+  document.getElementById('mapLoading').querySelector('p').textContent =
+    `Geocoding ${geocodeIndex + 1} of ${geocodeQueue.length}...`;
+
+  geocoder.geocode({ address: f.address }, (results, status) => {
+    if (status === 'OK') {
+      f.lat = results[0].geometry.location.lat();
+      f.lng = results[0].geometry.location.lng();
+    }
+    geocodeIndex++;
+    setTimeout(processNextGeocode, 120); // rate limit
+  });
+}
+
+// ─── MAP ──────────────────────────────────────────────────────────────────────
+function initMap() {
+  mapsReady = true;
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 36.8, lng: -86.5 },
+    zoom: 7,
+    mapTypeId: 'satellite',
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+      position: google.maps.ControlPosition.TOP_RIGHT
+    },
+    fullscreenControl: true,
+    streetViewControl: false,
+    styles: []
+  });
+  geocoder = new google.maps.Geocoder();
+  infoWindow = new google.maps.InfoWindow();
+
+  if (allFacilities.length > 0) startGeocoding();
+  else document.getElementById('mapLoading').querySelector('p').textContent = 'Sync data to load map';
+}
+
+function pinColor(f) {
+  if (!f.followUp || f.followUp.trim() === '') return '#7A7F96';
+  const due = new Date(f.followUp);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return due < today ? '#D94040' : '#4A8C3F';
+}
+
+function applyFilters() {
+  filters.status = document.getElementById('statusFilter').value;
+  const visible = allFacilities.filter(f => {
+    const assignedOk = filters.assigned === 'all' || f.assigned === filters.assigned;
+    const statusOk = filters.status === 'all' || f.status === filters.status;
+    return assignedOk && statusOk;
+  });
+
+  // Clear markers
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let pastDue = 0;
+
+  visible.forEach(f => {
+    if (!f.lat || !f.lng) return;
+    const color = pinColor(f);
+    if (color === '#D94040') pastDue++;
+
+    const marker = new google.maps.Marker({
+      position: { lat: f.lat, lng: f.lng },
+      map: map,
+      title: f.name,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: color,
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2
+      }
+    });
+
+    marker.addListener('click', () => {
+      const followUpStr = f.followUp ? f.followUp : 'Not set';
+      const lastStr = f.lastContact ? f.lastContact : '—';
+      const isPastDue = f.followUp && new Date(f.followUp) < today;
+      const badgeHtml = isPastDue
+        ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>'
+        : f.followUp ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>' : '';
+
+      infoWindow.setContent(`
+        <div class="iw-body">
+          <div class="iw-name">${f.name} ${badgeHtml}</div>
+          <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
+          <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
+          <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned === 'Sheet11' ? 'Lance' : f.assigned}</span></div>
+          <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${lastStr}</span></div>
+          <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
+          <div class="iw-row"><span class="iw-label">Follow-Up</span><span class="iw-val">${followUpStr}</span></div>
+          <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
+          ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
+        </div>
+      `);
+      infoWindow.open(map, marker);
+    });
+
+    markers.push(marker);
+  });
+
+  document.getElementById('stat-showing').textContent = markers.length;
+  document.getElementById('stat-pastdue').textContent = pastDue;
+}
+
+function setFilter(type, val, btn) {
+  filters[type] = val;
+  btn.closest('.filter-group').querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (map) applyFilters();
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function buildDashboard() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sixMonthsAgo = new Date(today); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const total = allFacilities.length;
+  const pastDueFollowUp = allFacilities.filter(f => f.followUp && new Date(f.followUp) < today).length;
+  const staleContact = allFacilities.filter(f => {
+    if (!f.lastContact || f.lastContact.trim() === '') return true;
+    const d = new Date(f.lastContact);
+    return isNaN(d) ? false : d < sixMonthsAgo;
+  }).length;
+  const noFollowUp = allFacilities.filter(f => !f.followUp || f.followUp.trim() === '').length;
+  const offersMade = allFacilities.filter(f => f.status && f.status.toLowerCase().includes('offer')).length;
+
+  // Per-person stats
+  const byPerson = {};
+  allFacilities.forEach(f => {
+    const name = f.assigned === 'Sheet11' ? 'Lance' : f.assigned;
+    if (!byPerson[name]) byPerson[name] = { total: 0, pastDue: 0 };
+    byPerson[name].total++;
+    if (f.followUp && new Date(f.followUp) < today) byPerson[name].pastDue++;
+  });
+
+  // Past due list
+  const pastDueList = allFacilities
+    .filter(f => f.followUp && new Date(f.followUp) < today)
+    .sort((a,b) => new Date(a.followUp) - new Date(b.followUp))
+    .slice(0, 10);
+
+  // Stale contact list
+  const staleList = allFacilities
+    .filter(f => {
+      if (!f.lastContact || f.lastContact.trim() === '') return false;
+      const d = new Date(f.lastContact);
+      return !isNaN(d) && d < sixMonthsAgo;
+    })
+    .sort((a,b) => new Date(a.lastContact) - new Date(b.lastContact))
+    .slice(0, 10);
+
+  const ownerCards = Object.entries(byPerson).map(([name, s]) => `
+    <div class="owner-card">
+      <div class="owner-name">${name}</div>
+      <div class="owner-stat">${s.total} facilities</div>
+      <div class="owner-stat"><span>${s.pastDue} past due</span></div>
+    </div>
+  `).join('');
+
+  const pastDueRows = pastDueList.length ? pastDueList.map(f => `
+    <tr>
+      <td>${f.name}</td>
+      <td>${f.owner || '—'}</td>
+      <td>${f.assigned === 'Sheet11' ? 'Lance' : f.assigned}</td>
+      <td><span class="badge badge-red">${f.followUp}</span></td>
+    </tr>
+  `).join('') : '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">None — all follow-ups current!</td></tr>';
+
+  const staleRows = staleList.length ? staleList.map(f => `
+    <tr>
+      <td>${f.name}</td>
+      <td>${f.owner || '—'}</td>
+      <td>${f.assigned === 'Sheet11' ? 'Lance' : f.assigned}</td>
+      <td><span class="badge badge-yellow">${f.lastContact}</span></td>
+    </tr>
+  `).join('') : '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">All contacts are recent</td></tr>';
+
+  document.getElementById('dashboardContent').innerHTML = `
+    <div>
+      <div class="dash-section-title">Overview</div>
+      <div class="metrics-grid">
+        <div class="metric-card blue"><div class="metric-val blue">${total}</div><div class="metric-lbl">Total Facilities</div></div>
+        <div class="metric-card red"><div class="metric-val red">${pastDueFollowUp}</div><div class="metric-lbl">Past Due Follow-Ups</div></div>
+        <div class="metric-card yellow"><div class="metric-val yellow">${staleContact}</div><div class="metric-lbl">Last Contact &gt;6 Months</div></div>
+        <div class="metric-card"><div class="metric-val" style="color:var(--text-muted)">${noFollowUp}</div><div class="metric-lbl">No Follow-Up Set</div></div>
+        <div class="metric-card green"><div class="metric-val green">${offersMade}</div><div class="metric-lbl">Offers Made</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="dash-section-title">By Person</div>
+      <div class="owner-cards">${ownerCards}</div>
+    </div>
+
+    <div class="dash-row">
+      <div class="dash-card">
+        <div class="dash-section-title">Past Due Follow-Ups (Top 10)</div>
+        <table class="dash-table">
+          <thead><tr><th>Facility</th><th>Owner</th><th>Assigned</th><th>Due</th></tr></thead>
+          <tbody>${pastDueRows}</tbody>
+        </table>
+      </div>
+      <div class="dash-card">
+        <div class="dash-section-title">Stale Last Contact &gt;6mo (Top 10)</div>
+        <table class="dash-table">
+          <thead><tr><th>Facility</th><th>Owner</th><th>Assigned</th><th>Last Contact</th></tr></thead>
+          <tbody>${staleRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function showView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showError(msg) {
+  const existing = document.querySelector('.error-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.className = 'error-banner';
+  banner.textContent = msg;
+  document.querySelector('.main').prepend(banner);
+}
+</script>
+
+<!-- 
+  TO USE THIS DASHBOARD:
+  1. Replace 'AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q' above with your Google Maps API key
+     Get one free at: https://console.cloud.google.com (enable Maps JavaScript API + Geocoding API)
+  2. Make sure your Google Sheet is shared: Share → Anyone with the link → Viewer
+  3. Save this file and open it in any browser
+  4. Click "Sync from Sheets" to load your data
+  
+  TO SWITCH TO YOUR LIVE SHEET LATER:
+  Just update the SHEET_ID variable at the top of the script.
+  As long as columns are in the same order, everything else stays the same.
+-->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q&callback=initMap&libraries=places">
+</script>
+
+</body>
+</html>
