@@ -163,6 +163,7 @@
         <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div>Past due follow-up</div>
         <div class="legend-row"><div class="legend-dot" style="background:var(--green)"></div>Follow-up current</div>
         <div class="legend-row"><div class="legend-dot" style="background:var(--text-muted)"></div>No date set</div>
+        <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><div style="width:10px;height:10px;border-radius:50%;border:1.5px solid #4ADE80;background:rgba(74,222,128,0.15);flex-shrink:0"></div>150mi priority zone</div>
       </div>
     </div>
   </div>
@@ -298,6 +299,49 @@ function initMap() {
   });
   geocoder = new google.maps.Geocoder();
   infoWindow = new google.maps.InfoWindow();
+
+  // Priority radius circles — 150 miles in meters
+  const RADIUS_M = 150 * 1609.34;
+  const priorityZones = [
+    { lat: 36.6101, lng: -88.3148, label: 'Murray, KY' },
+    { lat: 37.9748, lng: -87.4130, label: 'Newburgh, IN' }
+  ];
+
+  priorityZones.forEach(zone => {
+    // Shaded circle
+    new google.maps.Circle({
+      map: map,
+      center: { lat: zone.lat, lng: zone.lng },
+      radius: RADIUS_M,
+      fillColor: '#4ADE80',
+      fillOpacity: 0.06,
+      strokeColor: '#4ADE80',
+      strokeOpacity: 0.5,
+      strokeWeight: 1.5
+    });
+    // Center dot marker
+    new google.maps.Marker({
+      map: map,
+      position: { lat: zone.lat, lng: zone.lng },
+      title: zone.label,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 6,
+        fillColor: '#4ADE80',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2
+      },
+      zIndex: 999
+    });
+    // Label
+    new google.maps.InfoWindow({
+      content: `<div style="font-family:monospace;font-size:11px;color:#333;padding:2px 4px">${zone.label}</div>`,
+      position: { lat: zone.lat, lng: zone.lng },
+      disableAutoPan: true
+    }).open(map);
+  });
+
   if (allFacilities.length > 0) startGeocoding();
   else document.getElementById('mapLoading').querySelector('p').textContent = 'Sync data to load map';
 }
@@ -486,7 +530,7 @@ function showError(msg) {
 </script>
 
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD-placeholder&callback=initMap">
 </script>
 
 </body>
