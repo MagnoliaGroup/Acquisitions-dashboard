@@ -257,9 +257,34 @@ function populateStatusFilter() {
   });
 }
 
+// Load geocode cache from localStorage
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem('acq_geocache') || '{}'); } catch(e) { return {}; }
+}
+function saveCache(cache) {
+  try { localStorage.setItem('acq_geocache', JSON.stringify(cache)); } catch(e) {}
+}
+
 function startGeocoding() {
-  document.getElementById('mapLoading').style.display = 'flex';
+  const cache = loadCache();
+  // Apply cached coordinates first
+  allFacilities.forEach(f => {
+    if (f.address && cache[f.address]) {
+      f.lat = cache[f.address].lat;
+      f.lng = cache[f.address].lng;
+    }
+  });
+
+  // Only geocode addresses not in cache
   geocodeQueue = allFacilities.filter(f => f.address && !f.lat);
+
+  if (geocodeQueue.length === 0) {
+    document.getElementById('mapLoading').style.display = 'none';
+    applyFilters();
+    return;
+  }
+
+  document.getElementById('mapLoading').style.display = 'flex';
   geocodeIndex = 0;
   processNextGeocode();
 }
@@ -270,14 +295,39 @@ function processNextGeocode() {
     applyFilters();
     return;
   }
+
   const f = geocodeQueue[geocodeIndex];
+  const cache = loadCache();
+
   document.getElementById('mapLoading').querySelector('p').textContent =
     `Geocoding ${geocodeIndex + 1} of ${geocodeQueue.length}...`;
+
+  // Safety timeout — if geocoder hangs, skip after 5 seconds
+  let didRespond = false;
+  const safetyTimer = setTimeout(() => {
+    if (!didRespond) {
+      didRespond = true;
+      geocodeIndex++;
+      setTimeout(processNextGeocode, 120);
+    }
+  }, 5000);
+
   geocoder.geocode({ address: f.address }, (results, status) => {
+    if (didRespond) return;
+    didRespond = true;
+    clearTimeout(safetyTimer);
+
     if (status === 'OK') {
       f.lat = results[0].geometry.location.lat();
       f.lng = results[0].geometry.location.lng();
+      cache[f.address] = { lat: f.lat, lng: f.lng };
+      saveCache(cache);
+    } else if (status === 'OVER_QUERY_LIMIT') {
+      // Back off and retry
+      setTimeout(processNextGeocode, 2000);
+      return;
     }
+    // Skip failed addresses and move on
     geocodeIndex++;
     setTimeout(processNextGeocode, 120);
   });
@@ -530,7 +580,7 @@ function showError(msg) {
 </script>
 
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD-placeholder&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q&callback=initMap">
 </script>
 
 </body>
