@@ -3,585 +3,3368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Acquisitions Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>Finance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
   :root {
-    --red: #D94040;
-    --green: #4A8C3F;
-    --yellow: #E8A020;
-    --bg: #0F1117;
-    --surface: #181B24;
-    --surface2: #1E2230;
-    --border: #2A2E3E;
-    --text: #E8EAF0;
-    --text-muted: #7A7F96;
-    --accent: #3B7DD8;
-    --font: 'DM Sans', sans-serif;
+    --bg: #0a0b0e;
+    --bg2: #111318;
+    --bg3: #181b22;
+    --bg4: #1e222c;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8a8f9e;
+    --text3: #545868;
+    --accent: #4ade80;
+    --accent2: #22c55e;
+    --accent-dim: rgba(74,222,128,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --amber: #fbbf24;
+    --purple: #a78bfa;
     --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-  .topnav { display: flex; align-items: center; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 48px; flex-shrink: 0; }
-  .brand { font-family: var(--mono); font-size: 13px; color: var(--text-muted); letter-spacing: 0.08em; margin-right: 32px; }
-  .brand span { color: var(--accent); }
-  .tab-btn { padding: 0 18px; height: 48px; border: none; background: none; color: var(--text-muted); font-family: var(--font); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
-  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
-  .tab-btn:hover:not(.active) { color: var(--text); }
-  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-  .sync-btn { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--accent); border: none; border-radius: 6px; color: #fff; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
-  .sync-btn:hover { opacity: 0.85; }
-  .sync-btn.syncing { opacity: 0.6; pointer-events: none; }
-  .last-sync { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .view { display: none; flex: 1; overflow: hidden; }
-  .view.active { display: flex; flex-direction: column; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-  .toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; flex-shrink: 0; }
-  .filter-label { font-size: 11px; color: var(--text-muted); font-family: var(--mono); letter-spacing: 0.06em; }
-  .filter-group { display: flex; gap: 4px; }
-  .filter-chip { padding: 4px 12px; font-size: 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
-  .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--text); }
-  .divider { width: 1px; height: 20px; background: var(--border); }
-  .status-select { padding: 4px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font); cursor: pointer; }
-  .status-select option { background: var(--surface2); }
-  .map-stats { margin-left: auto; display: flex; gap: 14px; }
-  .map-stat { font-size: 11px; font-family: var(--mono); }
-  .map-stat .val { color: var(--text); font-weight: 500; }
-  .map-stat .lbl { color: var(--text-muted); }
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
 
-  .map-wrap { flex: 1; position: relative; }
-  #map { width: 100%; height: 100%; }
-  .map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 10; flex-direction: column; gap: 12px; }
-  .map-loading .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-date {
+    color: var(--text3);
+    font-size: 11px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--bg4); border-color: var(--border2); }
+  .btn-accent {
+    background: var(--accent);
+    color: #0a0b0e;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-danger { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+  /* ── METRICS STRIP ── */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .metric-box {
+    background: var(--bg);
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .metric-value {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .metric-delta {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .delta-pos { color: var(--accent); }
+  .delta-neg { color: var(--red); }
+
+  /* ── TABS ── */
+  .tabs-bar {
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    gap: 0;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── CONTENT AREA ── */
+  .content {
+    padding: 18px 32px;
+    max-width: 1600px;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── GRID HELPERS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .col-span-2 { grid-column: span 2; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* ── SECTION HEADING ── */
+  .section-heading {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+  .section-heading:first-child { margin-top: 0; }
+
+  /* ── ACCOUNT CARDS ── */
+  .account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .account-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .account-card:hover {
+    border-color: var(--border2);
+    background: var(--bg4);
+  }
+
+  .account-name {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .account-balance {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .account-delta {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .account-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--bg4);
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── MONEY FLOW ── */
+  .flow-layout {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 10px 0;
+  }
+
+  .flow-source {
+    background: var(--accent-dim);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 130px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .flow-mid {
+    position: relative;
+    flex: 0 0 80px;
+    align-self: stretch;
+    min-height: 20px;
+  }
+
+  .flow-mid svg {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    overflow: visible;
+  }
+
+  .flow-destinations {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .flow-dest {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .flow-dest:hover { border-color: var(--border2); }
+
+  .flow-label { font-size: 11px; color: var(--text2); }
+  .flow-amount { font-family: var(--sans); font-size: 15px; font-weight: 700; }
+  .flow-pct { font-size: 10px; color: var(--text3); }
+
+  /* ── TRANSACTION TABLE ── */
+  .tx-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .tx-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  .tx-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .tx-table tr:last-child td { border-bottom: none; }
+  .tx-table tr:hover td { background: var(--bg3); }
+
+  .tx-amount-neg { color: var(--red); }
+  .tx-amount-pos { color: var(--accent); }
+
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .category-pill:hover { border-color: var(--border2); }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg3);
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .upload-icon { font-size: 32px; margin-bottom: 12px; }
+  .upload-title { font-family: var(--sans); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .upload-sub { color: var(--text3); font-size: 12px; }
+
+  .upload-files-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .upload-file-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  /* ── PROGRESS / AI ── */
+  .ai-status {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .ai-status-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text2);
+    padding: 6px 0;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .map-loading p { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
 
-  .map-legend { position: absolute; bottom: 28px; left: 12px; background: rgba(15,17,23,0.92); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; z-index: 5; backdrop-filter: blur(8px); }
-  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
-  .legend-row:last-child { margin-bottom: 0; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+  /* ── BAR CHART (expenses) ── */
+  .expense-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.1s;
+  }
+  .expense-bar-row:hover { background: var(--bg3); }
 
-  .dashboard { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-  .dash-section-title { font-size: 11px; font-family: var(--mono); color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; position: relative; overflow: hidden; }
-  .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .metric-card.red::before { background: var(--red); }
-  .metric-card.green::before { background: var(--green); }
-  .metric-card.blue::before { background: var(--accent); }
-  .metric-card.yellow::before { background: var(--yellow); }
-  .metric-card.gray::before { background: var(--text-muted); }
-  .metric-val { font-size: 32px; font-weight: 600; line-height: 1; margin-bottom: 6px; }
-  .metric-val.red { color: var(--red); }
-  .metric-val.green { color: var(--green); }
-  .metric-val.blue { color: var(--accent); }
-  .metric-val.yellow { color: var(--yellow); }
-  .metric-val.gray { color: var(--text-muted); }
-  .metric-lbl { font-size: 12px; color: var(--text-muted); }
+  .expense-bar-label { width: 160px; font-size: 12px; color: var(--text2); flex-shrink: 0; }
+  .expense-bar-track { flex: 1; background: var(--bg4); border-radius: 4px; height: 8px; overflow: hidden; }
+  .expense-bar-fill { height: 100%; border-radius: 4px; background: var(--blue); transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+  .expense-bar-amount { width: 80px; text-align: right; font-family: var(--sans); font-weight: 600; font-size: 13px; }
+  .expense-bar-pct { width: 40px; text-align: right; font-size: 11px; color: var(--text3); }
 
-  .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 800px) { .dash-row { grid-template-columns: 1fr; } }
+  /* ── RULES PAGE ── */
+  .rule-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
 
-  .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
-  .dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .dash-table th { text-align: left; padding: 6px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 400; font-family: var(--mono); font-size: 11px; }
-  .dash-table td { padding: 8px 8px; border-bottom: 1px solid rgba(42,46,62,0.5); color: var(--text); vertical-align: top; }
-  .dash-table tr:last-child td { border-bottom: none; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-family: var(--mono); }
-  .badge-red { background: rgba(217,64,64,0.15); color: #F08080; border: 1px solid rgba(217,64,64,0.3); }
-  .badge-yellow { background: rgba(232,160,32,0.15); color: #F0C060; border: 1px solid rgba(232,160,32,0.3); }
+  .rule-keyword { flex: 1; font-size: 12px; font-family: var(--mono); }
+  .rule-arrow { color: var(--text3); }
+  .rule-category { color: var(--accent); font-size: 12px; }
+  .rule-actions { display: flex; gap: 6px; margin-left: auto; }
 
-  .owner-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  .owner-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-  .owner-name { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
-  .owner-stat { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; font-family: var(--mono); }
-  .owner-stat span { color: var(--red); }
+  input, select, textarea {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--bg4); }
 
-  .no-data { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
-  .error-banner { background: rgba(217,64,64,0.1); border: 1px solid rgba(217,64,64,0.3); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #F08080; margin: 12px 16px; }
+  label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .form-group { margin-bottom: 14px; }
 
-  .gm-style .gm-style-iw-c { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; padding: 0 !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
-  .gm-style .gm-style-iw-d { overflow: hidden !important; }
-  .gm-style .gm-style-iw-t::after { display: none !important; }
-  .gm-style button.gm-ui-hover-effect { top: 4px !important; right: 4px !important; }
-  .gm-style button.gm-ui-hover-effect img { display: none !important; }
-  .gm-style button.gm-ui-hover-effect::after { content: '×'; color: var(--text-muted); font-size: 18px; line-height: 1; }
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
 
-  .iw-body { padding: 14px 16px; min-width: 220px; max-width: 300px; }
-  .iw-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; padding-right: 20px; }
-  .iw-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; font-size: 11px; }
-  .iw-label { color: var(--text-muted); font-family: var(--mono); }
-  .iw-val { color: var(--text); text-align: right; max-width: 160px; }
-  .iw-notes { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; max-height: 80px; overflow-y: auto; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 28px;
+    width: 480px;
+    max-width: 95vw;
+    transform: scale(0.97);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+
+  .modal-title {
+    font-family: var(--sans);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  /* ── SNAPSHOT TABLE ── */
+  .snapshot-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .snapshot-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  .snapshot-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  /* ── MISC ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .badge-green { background: var(--accent-dim); color: var(--accent); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+    font-size: 12px;
+  }
+  .empty-state .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+
+  .api-key-notice {
+    background: var(--accent-dim);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-wrap { position: relative; }
+  canvas { max-width: 100%; }
+
+  .month-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .month-selector select { width: auto; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+  .dragging { opacity: 0.5; }
+
+  .net-worth-value { color: var(--accent); }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: fixed;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 300;
+    display: none;
+  }
 </style>
 </head>
 <body>
 
-<div class="topnav">
-  <div class="brand">ACQUISITIONS <span>//</span> V1</div>
-  <button class="tab-btn active" onclick="showView('map',this)">Map</button>
-  <button class="tab-btn" onclick="showView('dashboard',this)">Dashboard</button>
-  <div class="nav-right">
-    <span class="last-sync" id="lastSync">Not synced</span>
-    <button class="sync-btn" id="syncBtn" onclick="loadData()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-      Sync from Sheets
-    </button>
+<header>
+  <div class="logo">⬡ <span>LEDGER</span></div>
+  <div class="header-right">
+    <span class="header-date" id="headerDate"></span>
+    <button class="btn btn-sm" onclick="saveSnapshot()">⊕ Save Snapshot</button>
+    <button class="btn btn-sm btn-accent" onclick="openApiKeyModal()">API Key</button>
+  </div>
+</header>
+
+<!-- METRICS STRIP -->
+<div class="metrics-strip">
+  <div class="metric-box">
+    <div class="metric-label">Net Worth</div>
+    <div class="metric-value net-worth-value" id="metricNetWorth">$0</div>
+    <div class="metric-delta" id="metricNetWorthDelta"><span class="delta-pos">—</span></div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-label">Cash</div>
+    <div class="metric-value" id="metricCash">$0</div>
+    <div class="metric-delta" id="metricCashDelta"><span class="delta-pos">—</span></div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-label">YTD Income</div>
+    <div class="metric-value" id="metricIncome">$0</div>
+    <div class="metric-delta"><span style="color:var(--text3)" id="metricIncomeYear"></span></div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-label">YTD Expenses</div>
+    <div class="metric-value" id="metricSpent">$0</div>
+    <div class="metric-delta"><span style="color:var(--text3)" id="metricSpentYear"></span></div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-label">YTD Savings</div>
+    <div class="metric-value" id="metricSavings">$0</div>
+    <div class="metric-delta"><span style="color:var(--text3)">Income − Expenses</span></div>
   </div>
 </div>
 
-<div class="main">
-  <div class="view active" id="view-map">
-    <div class="toolbar">
-      <span class="filter-label">ASSIGNED</span>
-      <div class="filter-group">
-        <button class="filter-chip active" onclick="setFilter('assigned','all',this)">All</button>
-        <button class="filter-chip" onclick="setFilter('assigned','Lance',this)">Lance</button>
-        <button class="filter-chip" onclick="setFilter('assigned','Alex',this)">Alex</button>
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="tab" onclick="switchTab('accounts')">Accounts</div>
+  <div class="tab" onclick="switchTab('expenses')">Expenses</div>
+  <div class="tab" onclick="switchTab('income')">Income</div>
+  <div class="tab" onclick="switchTab('upload')">Monthly Upload</div>
+  <div class="tab" onclick="switchTab('rules')">Rules</div>
+  <div class="tab" onclick="switchTab('history')">History</div>
+  <div class="tab" onclick="switchTab('instructions')">Instructions</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ═══ OVERVIEW ═══ -->
+  <div class="tab-panel active" id="panel-overview">
+    <div class="grid-2" style="margin-bottom:10px">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Net Worth</div><div class="card-sub">Total assets minus liabilities</div></div>
+        </div>
+        <div style="font-family:var(--sans);font-size:32px;font-weight:800;letter-spacing:-1.5px;color:var(--accent)" id="ovNetWorth">$0</div>
+        <div style="margin-top:8px" class="chart-wrap"><canvas id="chartNetWorthTrend" height="60"></canvas></div>
       </div>
-      <div class="divider"></div>
-      <span class="filter-label">STATUS</span>
-      <select class="status-select" id="statusFilter" onchange="applyFilters()">
-        <option value="all">All Statuses</option>
-      </select>
-      <div class="map-stats">
-        <div class="map-stat"><span class="val" id="stat-showing">—</span> <span class="lbl">shown</span></div>
-        <div class="map-stat"><span class="val" id="stat-pastdue" style="color:var(--red)">—</span> <span class="lbl">past due</span></div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Liquid Assets</div><div class="card-sub">Cash + accessible investments</div></div>
+        </div>
+        <div style="font-family:var(--sans);font-size:32px;font-weight:800;letter-spacing:-1.5px;color:var(--blue)" id="ovLiquid">$0</div>
+        <div style="margin-top:8px" class="chart-wrap"><canvas id="chartLiquidBreakdown" height="60"></canvas></div>
       </div>
     </div>
-    <div class="map-wrap">
-      <div class="map-loading" id="mapLoading">
-        <div class="spinner"></div>
-        <p>Waiting for data sync...</p>
+
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header">
+        <div><div class="card-title">Money Flow</div><div class="card-sub" id="flowMonthLabel">This month</div></div>
+        <select id="flowYearSelect" onchange="renderOverviewCharts()" style="width:90px"></select>
       </div>
-      <div id="map"></div>
-      <div class="map-legend">
-        <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div>Past due follow-up</div>
-        <div class="legend-row"><div class="legend-dot" style="background:var(--green)"></div>Follow-up current</div>
-        <div class="legend-row"><div class="legend-dot" style="background:var(--text-muted)"></div>No date set</div>
-        <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><div style="width:10px;height:10px;border-radius:50%;border:1.5px solid #4ADE80;background:rgba(74,222,128,0.15);flex-shrink:0"></div>150mi priority zone</div>
+      <div class="flow-layout" id="moneyFlow" style="position:relative">
+        <div class="flow-source" id="flowSrc" onclick="showFlowDrill('grossIncome')" title="Click to manage gross income">
+          <div style="font-size:9px;color:rgba(74,222,128,0.5);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Gross Income</div>
+          <div id="flowIncome" style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-1px;line-height:1">$0</div>
+          <div style="font-size:9px;color:rgba(74,222,128,0.3);margin-top:4px">click to manage</div>
+        </div>
+        <div style="flex:0 0 80px;position:relative;align-self:stretch"></div>
+        <div class="flow-destinations" id="flowDests"></div>
+        <svg id="flowSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Income vs Expenses</div><div class="card-sub">Month by month — current year vs prior year</div></div>
+        <div class="month-selector">
+          <select id="ovYearSelect" onchange="renderOverviewCharts()" style="width:90px"></select>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartIncomeExpenses" height="140"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ ACCOUNTS ═══ -->
+  <div class="tab-panel" id="panel-accounts">
+    <div class="section-heading">Assets — Cash</div>
+    <div class="account-grid" id="acctCash"></div>
+
+    <div class="section-heading">Assets — Investments</div>
+    <div class="account-grid" id="acctInvestments"></div>
+
+    <div class="section-heading">Assets — Real Estate & Business</div>
+    <div class="account-grid" id="acctOther"></div>
+
+    <div class="section-heading">Liabilities</div>
+    <div class="account-grid" id="acctLiabilities"></div>
+  </div>
+
+  <!-- ═══ EXPENSES ═══ -->
+  <div class="tab-panel" id="panel-expenses">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <select id="expMonth" onchange="renderExpenses()" style="width:160px"></select>
+      <div style="flex:1"></div>
+      <div style="font-family:var(--sans);font-size:24px;font-weight:700">Total: <span id="expTotal" style="color:var(--red)">$0</span></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">By Category</div>
+        <div id="expBars"></div>
+      </div>
+      <div class="card" id="expDrillCard">
+        <div class="card-header">
+          <div><div class="card-title" id="expDrillTitle">Select a category</div></div>
+          <button class="btn btn-sm btn-ghost" onclick="clearDrill()">✕ Close</button>
+        </div>
+        <div id="expDrillContent">
+          <div class="empty-state"><div class="empty-icon">👆</div>Click a category to see transactions</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="view" id="view-dashboard">
-    <div class="dashboard" id="dashboardContent">
-      <div class="no-data">Sync data to view dashboard</div>
+  <!-- ═══ INCOME ═══ -->
+  <div class="tab-panel" id="panel-income">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Year</div>
+        <select id="incomeYear" onchange="renderIncomeTab()" style="width:100px"></select>
+      </div>
+      <div style="flex:1"></div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">YTD Total</div>
+        <div style="font-family:var(--sans);font-size:28px;font-weight:800;color:var(--accent)" id="incomeTotalDisplay">$0</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Income Transactions</div>
+          <div class="card-sub">All deposits from Old National accounts — click ✕ to exclude from total</div>
+        </div>
+      </div>
+      <div id="incomeTableWrap">
+        <div class="empty-state"><div class="empty-icon">💰</div>No income transactions yet — upload your Old National CSV</div>
+      </div>
     </div>
   </div>
+
+    <!-- ═══ UPLOAD ═══ -->
+  <div class="tab-panel" id="panel-upload">
+    <div class="api-key-notice">
+      <span>🔑</span>
+      <span id="apiKeyStatus">No API key set — click "API Key" in the header to configure</span>
+    </div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" multiple accept=".csv,.pdf,.png,.jpg,.jpeg" style="display:none" onchange="handleFileSelect(event)">
+      <div class="upload-icon">⬆</div>
+      <div class="upload-title">Drop files here</div>
+      <div class="upload-sub">Chase CC CSV · Old National CSV · Pay Stubs · Mortgage PDF · Investment screenshots</div>
+      <div class="upload-files-list" id="uploadFileList"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-accent" onclick="processUpload()" id="btnProcess">
+        ✦ Process with AI
+      </button>
+      <button class="btn" onclick="clearUploadFiles()">Clear Files</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-danger" onclick="deleteAllTransactions()" style="margin-left:auto">
+        🗑 Delete All Transactions
+      </button>
+    </div>
+
+    <div class="ai-status" id="aiStatus" style="display:none">
+      <div id="aiStatusLines"></div>
+    </div>
+
+    <div class="card" id="aiSummaryCard" style="display:none;margin-top:16px">
+      <div class="card-title" style="margin-bottom:12px">✅ Upload Summary</div>
+      <div id="aiSummaryText" style="font-size:12px;color:var(--text2);line-height:1.8;white-space:pre-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ RULES ═══ -->
+  <div class="tab-panel" id="panel-rules">
+    <div class="grid-2" style="margin-bottom:10px">
+
+      <!-- Left col: Add Rule + Add Category -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Add New Rule</div>
+          <div class="form-group">
+            <label>Keyword(s) — comma separated, matches merchant name</label>
+            <input type="text" id="ruleKeyword" placeholder="e.g. CHIPOTLE, CHIPOTLE MEXICAN">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="ruleCategory"></select>
+          </div>
+          <button class="btn btn-accent" onclick="addRule()">+ Add Rule</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:4px">Expense Categories</div>
+          <div class="card-sub" style="margin-bottom:16px">Add custom categories — they'll appear everywhere</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input type="text" id="newCatInput" placeholder="e.g. Pet Care, Subscriptions..." style="flex:1"
+              onkeydown="if(event.key==='Enter') addCategory()">
+            <button class="btn btn-accent" onclick="addCategory()" style="white-space:nowrap">+ Add</button>
+          </div>
+          <div id="categoryChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Right col: Rules list -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title">Active Rules (<span id="ruleCount">0</span>)</div>
+        </div>
+        <div id="rulesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div class="tab-panel" id="panel-history">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Net Worth Over Time</div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartNWHistory" height="200"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Account Growth</div>
+        <select id="histAcctSelect" onchange="renderAccountGrowthChart()" style="width:200px"></select>
+      </div>
+      <div class="chart-wrap"><canvas id="chartAcctGrowth" height="180"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Snapshot History</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="addHistoricalSnapshot()">+ Add Historical</button>
+          <button class="btn btn-sm btn-accent" onclick="saveSnapshot()">+ Save Snapshot</button>
+        </div>
+      </div>
+      <table class="snapshot-table">
+        <thead><tr>
+          <th>Date</th>
+          <th>Net Worth</th>
+          <th>Delta</th>
+          <th>Cash</th>
+          <th>Investments</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="snapshotTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ INSTRUCTIONS ═══ -->
+  <div class="tab-panel" id="panel-instructions">
+
+    <div style="max-width:800px">
+
+      <div style="margin-bottom:28px">
+        <div style="font-family:var(--sans);font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px">Monthly Maintenance</div>
+        <div style="font-size:12px;color:var(--text3)">Run through these steps once a month — takes about 20–30 minutes once you're in the rhythm.</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">1</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Download your CSVs</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Log into Old National online banking and download the <strong>Checking</strong> and <strong>Savings</strong> CSVs for the prior month. Then download your <strong>Chase credit card</strong> statement CSV for the same period.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">2</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Upload to Monthly Upload tab</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Drag all 3 CSVs into the upload zone at once and hit <strong>Process with AI</strong>. It will pull expenses, income deposits, and categorize everything automatically using your saved rules. The status bar will show each batch processing in real time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">3</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Review the Income tab</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Go to the <strong>Income tab</strong> and look through the deposit list. Hit <strong>✕ Exclude</strong> on anything that isn't real income — reimbursements, transfers back in, one-time deposits that don't represent earnings, etc.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">4</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Review Expenses tab</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Go to the <strong>Expenses tab</strong>, select the month you just uploaded. Click into <strong>Misc</strong> and reclassify anything obvious using the category dropdown. Delete any non-expenses that slipped through — Vanguard transfers, loan payments, credit card payments, etc. If you find a merchant that always shows up wrong, go add a Rule for it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">5</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Update money flow numbers (from pay stub)</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">On the <strong>Overview tab</strong>, scroll to the Money Flow section and click each box to update your YTD totals from your latest pay stub:</div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+                <span style="color:var(--text2)"><strong>Gross Income</strong> — YTD gross pay (Alex + Hannah combined)</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
+                <span style="color:var(--text2)"><strong>Tax</strong> — YTD federal + state tax withheld</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0"></div>
+                <span style="color:var(--text2)"><strong>Insurance</strong> — YTD health/dental/vision premiums</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+                <span style="color:var(--text2)"><strong>Long Term Investments</strong> — YTD 401k + IRA contributions from paycheck</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">6</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Update account balances</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Go to the <strong>Accounts tab</strong> and click each card to enter the current balance. Log into each account to get the latest numbers:</div>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:var(--text2)">
+              <div>• Old National Checking</div>
+              <div>• Old National Savings</div>
+              <div>• Vanguard</div>
+              <div>• IRA</div>
+              <div>• 401k</div>
+              <div>• HSA</div>
+              <div>• Home Mortgage balance</div>
+              <div>• Business Equity (if changed)</div>
+              <div>• Home Value (quarterly is fine)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:28px">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-family:var(--sans);font-size:22px;font-weight:800;color:var(--accent);flex-shrink:0;width:32px">7</div>
+          <div>
+            <div style="font-family:var(--sans);font-size:14px;font-weight:700;margin-bottom:4px">Save a snapshot</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">Hit the <strong>Save Snapshot</strong> button in the top right header. This locks in your net worth and all account balances for the month so the History chart builds over time. The dashboard auto-saves on the 1st of each month if you open it, but manually saving after you've updated everything ensures the numbers are accurate.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
 </div>
+
+<div class="tooltip" id="tooltip"></div>
 
 <script>
-const SHEET_ID = '1gnojvGasP1GGSxse3SNIXZSt_rk7tHJ1Vjsnhcwtz-A';
-const SHEETS = ['Lance', 'Alex'];
+// ═══════════════════════════════════════════════════════
+//  DATA STORE
+// ═══════════════════════════════════════════════════════
+const DEFAULT_CATEGORIES = ['Mortgage','Food & Restaurants','Shopping','Home Improvement',
+  'Transportation','Travel','Gym','Home Utilities','Insurance','Tax','Misc'];
 
-const COL = {
-  name: 0, address: 1, owner: 2, phone: 3, email: 4,
-  sqft: 5, website: 6, lastContact: 7, contactWas: 8,
-  followUp: 9, status: 10, notes: 11, xmas: 12
+function getCategories() {
+  const stored = localStorage.getItem('fin_categories');
+  return stored ? JSON.parse(stored) : [...DEFAULT_CATEGORIES];
+}
+
+function saveCategories(cats) {
+  localStorage.setItem('fin_categories', JSON.stringify(cats));
+}
+
+// Live accessor — use this everywhere instead of the static CATEGORIES constant
+Object.defineProperty(window, 'CATEGORIES', { get: getCategories });
+
+// Keywords that indicate a transfer/internal movement — never count as income or expense
+const TRANSFER_KEYWORDS = [
+  'TRANSFER', 'XFER', 'ZELLE TO', 'ZELLE FROM', 'ACH TO', 'ACH FROM',
+  'ONLINE PAYMENT', 'PAYMENT THANK YOU', 'AUTOPAY', 'CHASE PAYMENT',
+  'CREDIT CARD PAYMENT', 'CC PAYMENT', 'CARD PAYMENT',
+  'OLD NATIONAL TO', 'OLD NATIONAL FROM', 'INTERNAL',
+  'INVESTMENT TRANSFER', 'BROKERAGE', 'VANGUARD TRANSFER',
+  'SCHWAB TRANSFER', 'FIDELITY TRANSFER'
+];
+
+function isTransfer(tx) {
+  const m = (tx.merchant || '').toUpperCase();
+  return TRANSFER_KEYWORDS.some(k => m.includes(k)) || tx.category === 'Transfer';
+}
+
+function isCreditCardPayment(tx) {
+  const m = (tx.merchant || '').toUpperCase();
+  return m.includes('CHASE') && (m.includes('PAYMENT') || m.includes('AUTOPAY') || m.includes('CREDIT'));
+}
+
+const DEFAULT_ACCOUNTS = {
+  cash: [
+    { id:'on_checking', name:'Old National Checking', type:'cash', balance:0 },
+    { id:'on_savings',  name:'Old National Savings',  type:'cash', balance:0 },
+    { id:'vanguard',    name:'Vanguard',              type:'cash', balance:0 },
+  ],
+  investments: [
+    { id:'ira',  name:'IRA',  type:'investment', balance:0 },
+    { id:'k401', name:'401k', type:'investment', balance:0 },
+    { id:'hsa',  name:'HSA',  type:'investment', balance:0 },
+  ],
+  other: [
+    { id:'business_equity', name:'Business Equity',    type:'business', balance:0 },
+    { id:'home_value',      name:'Personal Home Value', type:'real_estate', balance:0 },
+  ],
+  liabilities: [
+    { id:'mortgage', name:'Home Mortgage', type:'liability', balance:0 },
+  ]
 };
 
-let allFacilities = [];
-let markers = [];
-let map = null;
-let geocoder = null;
-let infoWindow = null;
-let filters = { assigned: 'all', status: 'all' };
-let mapsReady = false;
-let geocodeQueue = [];
-let geocodeIndex = 0;
+const DEFAULT_RULES = [
+  { keyword:'CHIPOTLE', category:'Food & Restaurants' },
+  { keyword:'MCDONALDS', category:'Food & Restaurants' },
+  { keyword:'STARBUCKS', category:'Food & Restaurants' },
+  { keyword:'SHELL', category:'Transportation' },
+  { keyword:'MARATHON', category:'Transportation' },
+  { keyword:'BP ', category:'Transportation' },
+  { keyword:'AMAZON', category:'Shopping' },
+  { keyword:'WALMART', category:'Shopping' },
+  { keyword:'TARGET', category:'Shopping' },
+  { keyword:'NETFLIX', category:'Shopping' },
+  { keyword:'HOME DEPOT', category:'Home Improvement' },
+  { keyword:'LOWES', category:'Home Improvement' },
+  { keyword:'PLANET FITNESS', category:'Gym' },
+  { keyword:'OLD NATIONAL', category:'Misc' },
+];
 
-async function loadData() {
-  const btn = document.getElementById('syncBtn');
-  btn.classList.add('syncing');
-  allFacilities = [];
-  document.querySelector('.error-banner') && document.querySelector('.error-banner').remove();
+function loadData() {
+  return {
+    accounts: JSON.parse(localStorage.getItem('fin_accounts') || 'null') || JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)),
+    transactions: JSON.parse(localStorage.getItem('fin_transactions') || '[]'),
+    snapshots: JSON.parse(localStorage.getItem('fin_snapshots') || '[]'),
+    rules: JSON.parse(localStorage.getItem('fin_rules') || 'null') || [...DEFAULT_RULES],
+    income: JSON.parse(localStorage.getItem('fin_income') || '{}'),
+    apiKey: localStorage.getItem('fin_apiKey') || '',
+  };
+}
 
-  try {
-    for (const sheet of SHEETS) {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`;
-      const res = await fetch(url);
-      const text = await res.text();
-      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-      const rows = json.table.rows;
-      rows.forEach(row => {
-        if (!row.c || !row.c[COL.name] || !row.c[COL.name].v) return;
-        const get = (i) => {
-          if (!row.c || !row.c[i]) return '';
-          return String(row.c[i].f || row.c[i].v || '').trim();
-        };
-        allFacilities.push({
-          name: get(COL.name),
-          address: get(COL.address),
-          owner: get(COL.owner),
-          phone: get(COL.phone),
-          email: get(COL.email),
-          sqft: get(COL.sqft),
-          lastContact: get(COL.lastContact),
-          contactWas: get(COL.contactWas),
-          followUp: get(COL.followUp),
-          status: get(COL.status),
-          notes: get(COL.notes),
-          xmas: get(COL.xmas),
-          assigned: sheet,
-          lat: null, lng: null
-        });
-      });
-    }
+function saveData(data) {
+  localStorage.setItem('fin_accounts', JSON.stringify(data.accounts));
+  localStorage.setItem('fin_transactions', JSON.stringify(data.transactions));
+  localStorage.setItem('fin_snapshots', JSON.stringify(data.snapshots));
+  localStorage.setItem('fin_rules', JSON.stringify(data.rules));
+  localStorage.setItem('fin_income', JSON.stringify(data.income));
+}
 
-    populateStatusFilter();
-    buildDashboard();
-    document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+let DB = loadData();
+let uploadedFiles = [];
+let charts = {};
+let currentDrillCategory = null;
+let currentDrillYm = null;
+let dragSrcTxId = null;
 
-    if (mapsReady) startGeocoding();
-    else document.getElementById('mapLoading').querySelector('p').textContent = 'Loading map...';
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+const fmt = (n, digits=0) => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+const fmtSigned = n => (n>=0?'+':'−') + fmt(Math.abs(n));
 
-  } catch(e) {
-    showError('Failed to load sheet data. Make sure the sheet is shared publicly (Anyone with link → Viewer). Error: ' + e.message);
+function getYearMonth(date) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function thisMonth() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+}
+
+function monthLabel(ym) {
+  const [y,m] = ym.split('-');
+  return new Date(+y, +m-1, 1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+}
+
+function calcNetWorth() {
+  const a = DB.accounts;
+  let assets = 0;
+  [...a.cash, ...a.investments, ...a.other].forEach(ac => assets += ac.balance);
+  let liab = 0;
+  a.liabilities.forEach(ac => liab += ac.balance);
+  return assets - liab;
+}
+
+function calcCash() {
+  return DB.accounts.cash.reduce((s,a) => s + a.balance, 0);
+}
+
+function calcInvestments() {
+  return DB.accounts.investments.reduce((s,a) => s + a.balance, 0);
+}
+
+function getMonthTransactions(ym) {
+  return DB.transactions.filter(tx => getYearMonth(tx.date) === ym);
+}
+
+function getMonthIncome(ym) {
+  // Income = positive transactions in ON checking/savings that are not transfers, not excluded
+  return DB.transactions
+    .filter(t => getYearMonth(t.date) === ym
+      && t.source && (t.source.toLowerCase().includes('checking') || t.source.toLowerCase().includes('savings') || t.source === 'on_checking' || t.source === 'on_savings')
+      && t.amount > 0
+      && !isTransfer(t)
+      && !t.excludeFromIncome)
+    .reduce((s,t) => s + t.amount, 0);
+}
+
+function getGrossIncome(year) {
+  // Manual gross income entries from paycheck stubs
+  return DB.transactions
+    .filter(t => t.category === 'Gross Income' && new Date(t.date).getFullYear() === year)
+    .reduce((s,t) => s + Math.abs(t.amount), 0);
+}
+
+function getGrossIncomeOrFallback(year) {
+  const gross = getGrossIncome(year);
+  return gross > 0 ? gross : getYearIncome(year);
+}
+
+function getYearIncome(year) {
+  return DB.transactions
+    .filter(t => new Date(t.date).getFullYear() === year
+      && t.source && (t.source.toLowerCase().includes('checking') || t.source.toLowerCase().includes('savings') || t.source === 'on_checking' || t.source === 'on_savings')
+      && t.amount > 0
+      && !isTransfer(t)
+      && !t.excludeFromIncome)
+    .reduce((s,t) => s + t.amount, 0);
+}
+
+function getYearSpent(year) {
+  return DB.transactions
+    .filter(t => new Date(t.date).getFullYear() === year
+      && t.amount < 0
+      && !isTransfer(t)
+      && !isCreditCardPayment(t)
+      && t.category !== 'Tax'
+      && t.category !== 'Insurance'
+      && t.category !== 'Long Term Investments')
+    .reduce((s,t) => s + Math.abs(t.amount), 0);
+}
+
+function getMonthSpent(ym) {
+  const txs = getMonthTransactions(ym);
+  return txs.filter(t => t.amount < 0
+      && !isTransfer(t)
+      && !isCreditCardPayment(t)
+      && t.category !== 'Tax'
+      && t.category !== 'Insurance'
+      && t.category !== 'Long Term Investments')
+    .reduce((s,t) => s + Math.abs(t.amount), 0);
+}
+
+function getIncomeTransactions(year) {
+  return DB.transactions.filter(t =>
+    new Date(t.date).getFullYear() === year
+    && t.source && (t.source.toLowerCase().includes('checking') || t.source.toLowerCase().includes('savings') || t.source === 'on_checking' || t.source === 'on_savings')
+    && t.amount > 0
+    && !isTransfer(t)
+  ).sort((a,b) => new Date(b.date)-new Date(a.date));
+}
+
+function applyRules(merchant) {
+  const m = (merchant||'').toUpperCase();
+  for (const rule of DB.rules) {
+    const keywords = rule.keyword.split(',').map(k=>k.trim().toUpperCase());
+    if (keywords.some(k => m.includes(k))) return rule.category;
   }
-  btn.classList.remove('syncing');
+  return 'Misc';
 }
 
-function populateStatusFilter() {
-  const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s))].sort();
-  const sel = document.getElementById('statusFilter');
-  sel.innerHTML = '<option value="all">All Statuses</option>';
-  statuses.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    sel.appendChild(opt);
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+
+  autoSnapshot();
+  populateMonthSelectors();
+  populateYearSelector();
+  renderAll();
+  setupDragDrop();
+  updateApiKeyStatus();
+});
+
+function renderAll() {
+  updateMetricsStrip();
+  renderAccountsTab();
+  renderExpenses();
+  renderIncomeTab();
+  renderOverviewCharts();
+  renderHistoryTab();
+  renderRules();
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUTO-SNAPSHOT
+// ═══════════════════════════════════════════════════════
+function autoSnapshot() {
+  const today = new Date();
+  if (today.getDate() !== 1) return;
+  const ym = getYearMonth(today);
+  const already = DB.snapshots.find(s => s.date.startsWith(ym));
+  if (!already) saveSnapshot(true);
+}
+
+function addHistoricalSnapshot() {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let y = currentYear - 1; y >= currentYear - 10; y--) years.push(y);
+
+  openModal('Add Historical Snapshot', `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">
+      Enter a past net worth value to populate your history chart. Pick the month and year it applies to.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Year</label>
+        <select id="histYear">
+          ${years.map(y => '<option value="' + y + '">' + y + '</option>').join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Month</label>
+        <select id="histMonth">
+          <option value="12">December</option>
+          <option value="6">June</option>
+          <option value="3">March</option>
+          <option value="9">September</option>
+          <option value="1">January</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Net Worth</label>
+      <input type="number" id="editBalance" placeholder="e.g. 1500000" step="1">
+    </div>
+    <div style="font-size:11px;color:var(--text3)">This will appear on your net worth trend chart in the History tab.</div>
+  `, [
+    { label: 'Cancel', cls: 'btn', action: closeModal },
+    { label: 'Add', cls: 'btn btn-accent', action: () => {
+      const year  = parseInt(document.getElementById('histYear').value);
+      const month = parseInt(document.getElementById('histMonth').value);
+      const nw    = parseFloat(document.getElementById('editBalance').value);
+      if (isNaN(nw) || nw <= 0) { showToast('Enter a valid net worth'); return; }
+
+      const date = new Date(year, month - 1, 1);
+      const snap = {
+        date: date.toISOString(),
+        netWorth: nw,
+        cash: 0,
+        investments: 0,
+        accounts: JSON.parse(JSON.stringify(DB.accounts)),
+        auto: false,
+        historical: true
+      };
+
+      DB.snapshots.push(snap);
+      // Keep sorted newest first
+      DB.snapshots.sort((a,b) => new Date(b.date) - new Date(a.date));
+      saveData(DB);
+      renderHistoryTab();
+      closeModal();
+      showToast('Historical snapshot added for ' + date.toLocaleDateString('en-US',{month:'long',year:'numeric'}));
+    }}
+  ]);
+}
+
+function saveSnapshot(auto=false) {
+  const now = new Date();
+  const snap = {
+    date: now.toISOString(),
+    netWorth: calcNetWorth(),
+    cash: calcCash(),
+    investments: calcInvestments(),
+    accounts: JSON.parse(JSON.stringify(DB.accounts)),
+    auto
+  };
+  DB.snapshots.unshift(snap);
+  saveData(DB);
+  renderHistoryTab();
+  if (!auto) showToast('Snapshot saved!');
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['overview','accounts','expenses','income','upload','rules','history','instructions'];
+    t.classList.toggle('active', tabs[i] === name);
   });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name==='overview') renderOverviewCharts();
+  if (name==='history') renderHistoryTab();
+  if (name==='expenses') renderExpenses();
+  if (name==='income') renderIncomeTab();
 }
 
-// Load geocode cache from localStorage
-function loadCache() {
-  try { return JSON.parse(localStorage.getItem('acq_geocache') || '{}'); } catch(e) { return {}; }
-}
-function saveCache(cache) {
-  try { localStorage.setItem('acq_geocache', JSON.stringify(cache)); } catch(e) {}
-}
+// ═══════════════════════════════════════════════════════
+//  METRICS STRIP
+// ═══════════════════════════════════════════════════════
+function updateMetricsStrip() {
+  const nw = calcNetWorth();
+  document.getElementById('metricNetWorth').textContent = fmt(nw);
 
-function startGeocoding() {
-  const cache = loadCache();
-  // Apply cached coordinates first
-  allFacilities.forEach(f => {
-    if (f.address && cache[f.address]) {
-      f.lat = cache[f.address].lat;
-      f.lng = cache[f.address].lng;
-    }
-  });
-
-  // Only geocode addresses not in cache
-  geocodeQueue = allFacilities.filter(f => f.address && !f.lat);
-
-  if (geocodeQueue.length === 0) {
-    document.getElementById('mapLoading').style.display = 'none';
-    applyFilters();
-    return;
+  const prevSnap = DB.snapshots[1];
+  const el = document.getElementById('metricNetWorthDelta');
+  if (prevSnap) {
+    const delta = nw - prevSnap.netWorth;
+    const cls = delta>=0 ? 'delta-pos' : 'delta-neg';
+    const arr = delta>=0 ? '▲' : '▼';
+    el.innerHTML = '<span class="' + cls + '">' + arr + ' ' + fmt(Math.abs(delta)) + ' vs last snapshot</span>';
   }
 
-  document.getElementById('mapLoading').style.display = 'flex';
-  geocodeIndex = 0;
-  processNextGeocode();
+  const cash = calcCash();
+  document.getElementById('metricCash').textContent = fmt(cash);
+
+  const currentYear = new Date().getFullYear();
+  const ytdIncome = getYearIncome(currentYear);
+  const ytdSpent = getYearSpent(currentYear);
+  const ytdSavings = ytdIncome - ytdSpent;
+
+  document.getElementById('metricIncome').textContent = fmt(ytdIncome);
+  document.getElementById('metricSpent').textContent = fmt(ytdSpent);
+  document.getElementById('metricSavings').textContent = fmt(ytdSavings);
+  document.getElementById('metricSavings').style.color = ytdSavings >= 0 ? 'var(--accent)' : 'var(--red)';
+  const yearStr = currentYear + ' YTD';
+  const yEl1 = document.getElementById('metricIncomeYear');
+  const yEl2 = document.getElementById('metricSpentYear');
+  if (yEl1) yEl1.textContent = yearStr;
+  if (yEl2) yEl2.textContent = yearStr;
 }
 
-function processNextGeocode() {
-  if (geocodeIndex >= geocodeQueue.length) {
-    document.getElementById('mapLoading').style.display = 'none';
-    applyFilters();
-    return;
+// ═══════════════════════════════════════════════════════
+//  OVERVIEW CHARTS
+// ═══════════════════════════════════════════════════════
+function populateYearSelector() {
+  const sel = document.getElementById('ovYearSelect');
+  const currentYear = new Date().getFullYear();
+  sel.innerHTML = '';
+  for (let y = currentYear; y >= currentYear-4; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    sel.appendChild(o);
   }
-
-  const f = geocodeQueue[geocodeIndex];
-  const cache = loadCache();
-
-  document.getElementById('mapLoading').querySelector('p').textContent =
-    `Geocoding ${geocodeIndex + 1} of ${geocodeQueue.length}...`;
-
-  // Safety timeout — if geocoder hangs, skip after 5 seconds
-  let didRespond = false;
-  const safetyTimer = setTimeout(() => {
-    if (!didRespond) {
-      didRespond = true;
-      geocodeIndex++;
-      setTimeout(processNextGeocode, 120);
-    }
-  }, 5000);
-
-  geocoder.geocode({ address: f.address }, (results, status) => {
-    if (didRespond) return;
-    didRespond = true;
-    clearTimeout(safetyTimer);
-
-    if (status === 'OK') {
-      f.lat = results[0].geometry.location.lat();
-      f.lng = results[0].geometry.location.lng();
-      cache[f.address] = { lat: f.lat, lng: f.lng };
-      saveCache(cache);
-    } else if (status === 'OVER_QUERY_LIMIT') {
-      // Back off and retry
-      setTimeout(processNextGeocode, 2000);
-      return;
-    }
-    // Skip failed addresses and move on
-    geocodeIndex++;
-    setTimeout(processNextGeocode, 120);
-  });
 }
 
-function initMap() {
-  mapsReady = true;
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 36.8, lng: -86.5 },
-    zoom: 7,
-    mapTypeId: 'satellite',
-    mapTypeControl: true,
-    mapTypeControlOptions: {
-      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-      position: google.maps.ControlPosition.TOP_RIGHT
-    },
-    fullscreenControl: true,
-    streetViewControl: false
-  });
-  geocoder = new google.maps.Geocoder();
-  infoWindow = new google.maps.InfoWindow();
+function populateFlowYearSelector() {
+  const sel = document.getElementById('flowYearSelect');
+  const currentYear = new Date().getFullYear();
 
-  // Priority radius circles — 150 miles in meters
-  const RADIUS_M = 150 * 1609.34;
-  const priorityZones = [
-    { lat: 36.6101, lng: -88.3148, label: 'Murray, KY' },
-    { lat: 37.9748, lng: -87.4130, label: 'Newburgh, IN' }
+  // Collect years from transactions plus current year, going back a few years
+  const yearsSet = new Set([currentYear, currentYear - 1]);
+  DB.transactions.forEach(t => yearsSet.add(new Date(t.date).getFullYear()));
+  const years = [...yearsSet].sort((a,b) => b - a);
+
+  const prevVal = sel.value;
+  sel.innerHTML = '';
+  years.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y;
+    o.textContent = y;
+    sel.appendChild(o);
+  });
+  // Preserve selection if still valid, else default to current year
+  if (prevVal && years.includes(parseInt(prevVal))) {
+    sel.value = prevVal;
+  } else {
+    sel.value = currentYear;
+  }
+}
+
+function renderOverviewCharts() {
+  const nw = calcNetWorth();
+  document.getElementById('ovNetWorth').textContent = fmt(nw);
+  document.getElementById('ovLiquid').textContent = fmt(calcCash() + calcInvestments());
+
+  // Money flow — year selectable
+  populateFlowYearSelector();
+  const flowYear = parseInt(document.getElementById('flowYearSelect').value) || new Date().getFullYear();
+  const isCurrentYear = flowYear === new Date().getFullYear();
+  const income = getGrossIncomeOrFallback(flowYear);
+  const yearTxs = DB.transactions.filter(t => new Date(t.date).getFullYear() === flowYear);
+  const tax = yearTxs.filter(t=>t.category==='Tax').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const insurance = yearTxs.filter(t=>t.category==='Insurance').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const ltInvestments = yearTxs.filter(t=>t.category==='Long Term Investments').reduce((s,t)=>s+Math.abs(t.amount),0);
+  // For the current year, expenses are derived from real transactions.
+  // For past years, allow a manual "Expenses (manual)" category total.
+  const manualExpenses = yearTxs.filter(t=>t.category==='Expenses (manual)').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const expenses = isCurrentYear ? getYearSpent(flowYear) : (manualExpenses || getYearSpent(flowYear));
+  const savings = Math.max(0, income - expenses - tax - insurance - ltInvestments);
+
+  document.getElementById('flowMonthLabel').textContent = flowYear + (isCurrentYear ? ' Year to Date' : ' Full Year');
+  document.getElementById('flowIncome').textContent = fmt(income);
+
+  const pct = v => income > 0 ? Math.round(v/income*100) : 0;
+
+  // Define all flow boxes with their values
+  const expensesSubtitle = isCurrentYear ? '' : ' · click to manage';
+  const flowBoxes = [
+    { label:'Savings', value:savings, pct:pct(savings), color:'#4ade80', labelColor:'#9ae6b4', type:'savings',
+      style:'border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.07)', subtitle:'' },
+    { label:'Expenses', value:expenses, pct:pct(expenses), color:'#f87171', labelColor:'#fca5a5', type:'expenses',
+      style:'border-color:rgba(248,113,113,0.3);background:rgba(248,113,113,0.07)', subtitle:expensesSubtitle },
+    { label:'Tax', value:tax, pct:pct(tax), color:'#fbbf24', labelColor:'#fcd34d', type:'tax',
+      style:'border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.07)', subtitle:' · click to manage' },
+    { label:'Insurance', value:insurance, pct:pct(insurance), color:'#60a5fa', labelColor:'#93c5fd', type:'insurance',
+      style:'border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.07)', subtitle:' · click to manage' },
+    { label:'Long Term Investments', value:ltInvestments, pct:pct(ltInvestments), color:'#a78bfa', labelColor:'#c4b5fd', type:'investments',
+      style:'border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.07)', subtitle:' · click to manage' },
   ];
 
-  priorityZones.forEach(zone => {
-    // Shaded circle
-    new google.maps.Circle({
-      map: map,
-      center: { lat: zone.lat, lng: zone.lng },
-      radius: RADIUS_M,
-      fillColor: '#4ADE80',
-      fillOpacity: 0.06,
-      strokeColor: '#4ADE80',
-      strokeOpacity: 0.5,
-      strokeWeight: 1.5
-    });
-    // Center dot marker
-    new google.maps.Marker({
-      map: map,
-      position: { lat: zone.lat, lng: zone.lng },
-      title: zone.label,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 6,
-        fillColor: '#4ADE80',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2
-      },
-      zIndex: 999
-    });
-    // Label
-    new google.maps.InfoWindow({
-      content: `<div style="font-family:monospace;font-size:11px;color:#333;padding:2px 4px">${zone.label}</div>`,
-      position: { lat: zone.lat, lng: zone.lng },
-      disableAutoPan: true
-    }).open(map);
+  // Sort largest to smallest by value
+  flowBoxes.sort((a,b) => b.value - a.value);
+
+  // Render sorted boxes
+  const dests = document.getElementById('flowDests');
+  dests.innerHTML = '';
+  flowBoxes.forEach(box => {
+    const div = document.createElement('div');
+    div.className = 'flow-dest';
+    div.style.cssText = (box.style || '') + ';cursor:pointer';
+    div.title = 'Click to ' + (box.subtitle ? 'manage' : 'see details');
+    div.onclick = () => showFlowDrill(box.type);
+    div.innerHTML =
+      '<div><div class="flow-label" style="color:' + box.labelColor + '">' + box.label + '</div>' +
+      '<div style="font-size:10px;color:var(--text3)">' + box.pct + '%' + box.subtitle + '</div></div>' +
+      '<div style="text-align:right"><div style="font-family:var(--sans);font-size:15px;font-weight:700;color:' + box.color + '">' + fmt(box.value) + '</div></div>';
+    dests.appendChild(div);
   });
 
-  if (allFacilities.length > 0) startGeocoding();
-  else document.getElementById('mapLoading').querySelector('p').textContent = 'Sync data to load map';
-}
+  // Draw SVG flow lines after DOM settles
+  requestAnimationFrame(() => drawFlowLines(flowBoxes));
 
-function pinColor(f) {
-  if (!f.followUp || f.followUp.trim() === '') return '#7A7F96';
-  const due = new Date(f.followUp);
-  const today = new Date(); today.setHours(0,0,0,0);
-  return due < today ? '#D94040' : '#4A8C3F';
-}
-
-function applyFilters() {
-  filters.status = document.getElementById('statusFilter').value;
-  const visible = allFacilities.filter(f => {
-    const assignedOk = filters.assigned === 'all' || f.assigned === filters.assigned;
-    const statusOk = filters.status === 'all' || f.status === filters.status;
-    return assignedOk && statusOk;
+  // Net worth trend (from snapshots)
+  const snaps = [...DB.snapshots].reverse().slice(-12);
+  destroyChart('chartNetWorthTrend');
+  charts.chartNetWorthTrend = new Chart(document.getElementById('chartNetWorthTrend'), {
+    type:'line',
+    data:{
+      labels: snaps.map(s=>new Date(s.date).toLocaleDateString('en-US',{month:'short',year:'2-digit'})),
+      datasets:[{
+        data: snaps.map(s=>s.netWorth),
+        borderColor:'#4ade80', backgroundColor:'rgba(74,222,128,0.08)',
+        borderWidth:2, fill:true, tension:0.4, pointRadius:3, pointHoverRadius:5,
+        pointBackgroundColor:'#4ade80'
+      }]
+    },
+    options: lineOpts({prefix:'$'})
   });
 
-  markers.forEach(m => m.setMap(null));
-  markers = [];
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  let pastDue = 0;
-
-  visible.forEach(f => {
-    if (!f.lat || !f.lng) return;
-    const color = pinColor(f);
-    if (color === '#D94040') pastDue++;
-
-    const marker = new google.maps.Marker({
-      position: { lat: f.lat, lng: f.lng },
-      map: map,
-      title: f.name,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: color,
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2
+  // Liquid breakdown (donut)
+  const cashV = calcCash(), invV = calcInvestments();
+  destroyChart('chartLiquidBreakdown');
+  charts.chartLiquidBreakdown = new Chart(document.getElementById('chartLiquidBreakdown'), {
+    type:'doughnut',
+    data:{
+      labels:['Cash','Investments'],
+      datasets:[{
+        data:[cashV, invV],
+        backgroundColor:['rgba(74,222,128,0.7)','rgba(96,165,250,0.7)'],
+        borderColor:['#4ade80','#60a5fa'],
+        borderWidth:1
+      }]
+    },
+    options:{
+      responsive:true,
+      cutout:'70%',
+      plugins:{
+        legend:{ labels:{ color:'#8a8f9e', font:{family:'DM Mono'}, boxWidth:12, padding:16 } },
+        tooltip:{
+          callbacks:{ label: ctx => ` ${ctx.label}: $${ctx.raw.toLocaleString()}` },
+          backgroundColor:'#1e222c', titleColor:'#e8eaf0', bodyColor:'#8a8f9e',
+          borderColor:'rgba(255,255,255,0.12)', borderWidth:1
+        }
       }
+    }
+  });
+
+  // Income vs Expenses area chart
+  const year = parseInt(document.getElementById('ovYearSelect').value);
+  const months = Array.from({length:12},(_,i)=>`${year}-${String(i+1).padStart(2,'0')}`);
+  const incomeData = months.map(m => getMonthIncome(m));
+  const expData = months.map(m => getMonthSpent(m));
+
+  const prevYear = year - 1;
+  const prevMonths = Array.from({length:12},(_,i)=>`${prevYear}-${String(i+1).padStart(2,'0')}`);
+  const prevIncomeData = prevMonths.map(m => getMonthIncome(m));
+  const prevExpData = prevMonths.map(m => {
+    const txs = getMonthTransactions(m);
+    return txs.filter(t => t.amount < 0 && !isTransfer(t) && !isCreditCardPayment(t) && t.category !== 'Tax' && t.category !== 'Insurance').reduce((s,t)=>s+Math.abs(t.amount),0);
+  });
+
+  destroyChart('chartIncomeExpenses');
+  charts.chartIncomeExpenses = new Chart(document.getElementById('chartIncomeExpenses'), {
+    type:'bar',
+    data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[
+        { label:`${year} Income`, data:incomeData, backgroundColor:'rgba(74,222,128,0.4)', borderColor:'#4ade80', borderWidth:1.5, borderRadius:3 },
+        { label:`${year} Expenses`, data:expData, backgroundColor:'rgba(248,113,113,0.4)', borderColor:'#f87171', borderWidth:1.5, borderRadius:3 },
+        { label:`${prevYear} Income`, data:prevIncomeData, backgroundColor:'rgba(74,222,128,0.15)', borderColor:'rgba(74,222,128,0.4)', borderWidth:1, borderRadius:3, borderDash:[4,4] },
+        { label:`${prevYear} Expenses`, data:prevExpData, backgroundColor:'rgba(248,113,113,0.15)', borderColor:'rgba(248,113,113,0.4)', borderWidth:1, borderRadius:3 },
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ labels:{ color:'#8a8f9e', font:{family:'DM Mono',size:11}, boxWidth:12, padding:12 } },
+        tooltip:{ backgroundColor:'#1e222c', titleColor:'#e8eaf0', bodyColor:'#8a8f9e', borderColor:'rgba(255,255,255,0.12)', borderWidth:1,
+          callbacks:{ label: ctx => ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString()}` }
+        }
+      },
+      scales:{
+        x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#545868', font:{family:'DM Mono',size:11} } },
+        y:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#545868', font:{family:'DM Mono',size:11},
+            callback: v => '$'+v.toLocaleString() } }
+      }
+    }
+  });
+}
+
+function drawFlowLines(flowBoxes) {
+  const svg     = document.getElementById('flowSvg');
+  const src     = document.getElementById('flowSrc');
+  const layout  = document.getElementById('moneyFlow');
+  if (!svg || !src || !layout) return;
+
+  const layoutRect = layout.getBoundingClientRect();
+  const srcRect    = src.getBoundingClientRect();
+
+  // Source: right edge center, relative to layout
+  const x0 = srcRect.right - layoutRect.left;
+  const y0 = srcRect.top + srcRect.height / 2 - layoutRect.top;
+
+  const destBoxEls = document.querySelectorAll('#flowDests .flow-dest');
+  const totalVal = flowBoxes.reduce((s,b) => s + b.value, 0) || 1;
+
+  let paths = '';
+
+  destBoxEls.forEach((box, i) => {
+    if (i >= flowBoxes.length) return;
+    const fb = flowBoxes[i];
+    const boxRect = box.getBoundingClientRect();
+    // Destination: left edge center, relative to layout
+    const x1 = boxRect.left - layoutRect.left;
+    const y1 = boxRect.top + boxRect.height / 2 - layoutRect.top;
+    const sw = Math.max(1.5, (fb.value / totalVal) * 16);
+    // Control points: both pulled to midpoint X so curves fan out nicely
+    const mx = (x0 + x1) / 2;
+    paths += '<path d="M' + x0.toFixed(1) + ',' + y0.toFixed(1) +
+      ' C' + mx.toFixed(1) + ',' + y0.toFixed(1) +
+      ' ' + mx.toFixed(1) + ',' + y1.toFixed(1) +
+      ' ' + x1.toFixed(1) + ',' + y1.toFixed(1) + '"' +
+      ' fill="none" stroke="' + fb.color + '" stroke-width="' + sw.toFixed(1) +
+      '" stroke-opacity="0.45" stroke-linecap="round"/>';
+    paths += '<circle cx="' + x1.toFixed(1) + '" cy="' + y1.toFixed(1) + '" r="3" fill="' + fb.color + '" fill-opacity="0.8"/>';
+  });
+
+  // Dot on source right edge
+  paths += '<circle cx="' + x0.toFixed(1) + '" cy="' + y0.toFixed(1) + '" r="4" fill="#4ade80" fill-opacity="0.7"/>';
+  svg.innerHTML = paths;
+}
+
+function lineOpts({prefix=''}) {
+  return {
+    responsive:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#1e222c', titleColor:'#e8eaf0', bodyColor:'#8a8f9e',
+        borderColor:'rgba(255,255,255,0.12)', borderWidth:1,
+        callbacks:{ label: ctx => ` ${prefix}${ctx.raw.toLocaleString()}` }
+      }
+    },
+    scales:{
+      x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11}} },
+      y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11},
+          callback: v => prefix + v.toLocaleString() } }
+    }
+  };
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ACCOUNTS TAB
+// ═══════════════════════════════════════════════════════
+function renderAccountsTab() {
+  renderAccountGroup('acctCash', DB.accounts.cash, 'var(--accent)');
+  renderAccountGroup('acctInvestments', DB.accounts.investments, 'var(--blue)');
+  renderAccountGroup('acctOther', DB.accounts.other, 'var(--purple)');
+  renderAccountGroup('acctLiabilities', DB.accounts.liabilities, 'var(--red)', true);
+}
+
+function renderAccountGroup(containerId, accounts, color, isLiability=false) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  accounts.forEach(ac => {
+    const prevSnap = DB.snapshots[0];
+    let delta = null;
+    if (prevSnap) {
+      const group = isLiability ? 'liabilities' : Object.keys(DB.accounts).find(k => DB.accounts[k].find(a=>a.id===ac.id));
+      const prevAc = prevSnap.accounts[group]?.find(a=>a.id===ac.id);
+      if (prevAc) delta = ac.balance - prevAc.balance;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'account-card';
+    card.innerHTML = `
+      <div class="account-name">
+        <span>${ac.name}</span>
+        <span class="account-tag">${ac.type}</span>
+      </div>
+      <div class="account-balance" style="color:${isLiability?'var(--red)':color}">${fmt(ac.balance)}</div>
+      ${delta !== null ? `<div class="account-delta ${delta>=0&&!isLiability?'delta-pos':delta<0&&!isLiability?'delta-neg':''}" style="color:${deltaColor(delta,isLiability)}">${delta>=0?'▲':'▼'} ${fmt(Math.abs(delta))} vs last snapshot</div>` : '<div class="account-delta" style="color:var(--text3)">No prior snapshot</div>'}
+      <div style="margin-top:8px;font-size:10px;color:var(--text3)">Click to update</div>
+    `;
+    card.onclick = () => openAccountEdit(ac, isLiability);
+    container.appendChild(card);
+  });
+}
+
+function deltaColor(delta, isLiability) {
+  if (isLiability) return delta < 0 ? 'var(--accent)' : 'var(--red)';
+  return delta >= 0 ? 'var(--accent)' : 'var(--red)';
+}
+
+function openAccountEdit(ac, isLiability) {
+  openModal(`Update: ${ac.name}`, `
+    <div class="form-group">
+      <label>Current Balance</label>
+      <input type="number" id="editBalance" value="${ac.balance}" step="0.01">
+    </div>
+    <div style="font-size:11px;color:var(--text3)">Enter the current balance as a positive number.</div>
+  `, [
+    { label:'Cancel', cls:'btn', action: closeModal },
+    { label:'Save', cls:'btn btn-accent', action: () => {
+      const val = parseFloat(document.getElementById('editBalance').value) || 0;
+      ac.balance = val;
+      saveData(DB);
+      renderAccountsTab();
+      updateMetricsStrip();
+      closeModal();
+    }}
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPENSES TAB
+// ═══════════════════════════════════════════════════════
+function populateMonthSelectors() {
+  const sel = document.getElementById('expMonth');
+  sel.innerHTML = '';
+
+  // Group months by year and add a "Full Year" option for each year
+  const months = getAllMonths();
+  const years = [...new Set(months.map(m => m.split('-')[0]))].sort().reverse();
+
+  years.forEach(year => {
+    // Full year option
+    const oYear = document.createElement('option');
+    oYear.value = 'year_' + year;
+    oYear.textContent = '── ' + year + ' Full Year ──';
+    sel.appendChild(oYear);
+
+    // Individual months for this year
+    months.filter(m => m.startsWith(year)).forEach(ym => {
+      const o = document.createElement('option');
+      o.value = ym;
+      o.textContent = monthLabel(ym);
+      sel.appendChild(o);
     });
+  });
+}
 
-    marker.addListener('click', () => {
-      const isPastDue = f.followUp && new Date(f.followUp) < today;
-      const badge = isPastDue
-        ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>`
-        : f.followUp ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>` : '';
+function getAllMonths() {
+  const set = new Set();
+  DB.transactions.forEach(tx => set.add(getYearMonth(tx.date)));
+  set.add(thisMonth());
+  return [...set].sort().reverse();
+}
 
-      infoWindow.setContent(`
-        <div class="iw-body">
-          <div class="iw-name">${f.name} ${badge}</div>
-          <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned}</span></div>
-          <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${f.lastContact || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Follow-Up Due</span><span class="iw-val">${f.followUp || 'Not set'}</span></div>
-          <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
-          ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
+function renderExpenses() {
+  const val = document.getElementById('expMonth').value || thisMonth();
+  const isFullYear = val.startsWith('year_');
+  const year = isFullYear ? parseInt(val.replace('year_', '')) : null;
+
+  // Get transactions — either full year or single month
+  let txs, spent;
+  if (isFullYear) {
+    txs = DB.transactions.filter(t => new Date(t.date).getFullYear() === year);
+    spent = txs.filter(t => t.amount < 0 && !isTransfer(t) && !isCreditCardPayment(t)
+      && t.category !== 'Tax' && t.category !== 'Insurance' && t.category !== 'Long Term Investments')
+      .reduce((s,t) => s + Math.abs(t.amount), 0);
+  } else {
+    txs = getMonthTransactions(val);
+    spent = getMonthSpent(val);
+  }
+
+  document.getElementById('expTotal').textContent = fmt(spent);
+
+  // Group by category
+  const cats = {};
+  txs.filter(t => t.amount < 0 && !isTransfer(t) && !isCreditCardPayment(t)
+    && t.category !== 'Tax' && t.category !== 'Insurance' && t.category !== 'Long Term Investments')
+  .forEach(tx => {
+    const cat = tx.category || 'Misc';
+    cats[cat] = (cats[cat] || 0) + Math.abs(tx.amount);
+  });
+
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const maxVal = sorted[0]?.[1] || 1;
+  const total = Object.values(cats).reduce((s,v)=>s+v,0) || 1;
+
+  const bars = document.getElementById('expBars');
+  bars.innerHTML = '';
+  if (sorted.length === 0) {
+    bars.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>No expense data for this period</div>';
+    return;
+  }
+
+  sorted.forEach(([cat, amt]) => {
+    const row = document.createElement('div');
+    row.className = 'expense-bar-row';
+    row.innerHTML = `
+      <div class="expense-bar-label">${cat}</div>
+      <div class="expense-bar-track"><div class="expense-bar-fill" style="width:${(amt/maxVal*100).toFixed(1)}%"></div></div>
+      <div class="expense-bar-amount" style="color:var(--text)">${fmt(amt)}</div>
+      <div class="expense-bar-pct">${(amt/total*100).toFixed(1)}%</div>
+    `;
+    // For drill-down: pass year mode info
+    row.onclick = () => isFullYear ? drillCategoryYear(cat, year) : drillCategory(cat, val);
+    bars.appendChild(row);
+  });
+}
+
+function drillCategory(cat, ym) {
+  currentDrillCategory = cat;
+  currentDrillYm = ym;
+  const txs = getMonthTransactions(ym).filter(t => t.category === cat && t.amount < 0);
+  const titleEl = document.getElementById('expDrillTitle');
+  titleEl.textContent = cat + ' — ' + txs.length + ' transactions';
+  const content = document.getElementById('expDrillContent');
+
+  if (txs.length === 0) {
+    content.innerHTML = '<div class="empty-state">No transactions in this category</div>';
+    return;
+  }
+
+  const otherCats = getCategories().filter(c=>c!==cat);
+
+  // Build table via DOM to avoid quote-escaping issues in nested template literals
+  const table = document.createElement('table');
+  table.className = 'tx-table';
+  table.innerHTML = '<thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th></th></tr></thead><tbody></tbody>';
+  const tbody = table.querySelector('tbody');
+
+  txs.forEach(tx => {
+    const tr = document.createElement('tr');
+    tr.draggable = true;
+    tr.dataset.txid = tx.id;
+    tr.className = 'tx-row';
+
+    // Date
+    const tdDate = document.createElement('td');
+    tdDate.style.color = 'var(--text3)';
+    tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    tr.appendChild(tdDate);
+
+    // Merchant
+    const tdMerchant = document.createElement('td');
+    tdMerchant.textContent = tx.merchant;
+    tr.appendChild(tdMerchant);
+
+    // Amount
+    const tdAmt = document.createElement('td');
+    tdAmt.className = 'tx-amount-neg';
+    tdAmt.textContent = fmt(Math.abs(tx.amount));
+    tr.appendChild(tdAmt);
+
+    // Category select
+    const tdCat = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.className = 'category-pill';
+    sel.dataset.txid = tx.id;
+    sel.style.cssText = 'width:auto;padding:2px 8px;font-size:10px';
+    sel.onchange = function() { reclassify(this); };
+    const allCats = [cat, ...otherCats];
+    allCats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      if (c === cat) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    tdCat.appendChild(sel);
+    tr.appendChild(tdCat);
+
+    // Delete button
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger';
+    delBtn.textContent = 'Delete';
+    delBtn.title = 'Remove from expenses';
+    delBtn.dataset.txid = tx.id;
+    delBtn.addEventListener('click', () => deleteTransaction(delBtn));
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+
+    // Drag handlers
+    tr.addEventListener('dragstart', () => {
+      dragSrcTxId = tx.id;
+      tr.classList.add('dragging');
+    });
+    tr.addEventListener('dragend', () => tr.classList.remove('dragging'));
+
+    tbody.appendChild(tr);
+  });
+
+  content.innerHTML = '';
+  content.appendChild(table);
+}
+
+function drillCategoryYear(cat, year) {
+  currentDrillCategory = cat;
+  currentDrillYm = 'year_' + year;
+  const txs = DB.transactions.filter(t =>
+    new Date(t.date).getFullYear() === year && t.category === cat && t.amount < 0
+  ).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  const titleEl = document.getElementById('expDrillTitle');
+  titleEl.textContent = cat + ' — ' + year + ' Full Year (' + txs.length + ' transactions)';
+  const content = document.getElementById('expDrillContent');
+
+  if (txs.length === 0) {
+    content.innerHTML = '<div class="empty-state">No transactions in this category</div>';
+    return;
+  }
+
+  const otherCats = getCategories().filter(c=>c!==cat);
+  const table = document.createElement('table');
+  table.className = 'tx-table';
+  table.innerHTML = '<thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th></th></tr></thead>';
+  const tbody = document.createElement('tbody');
+
+  txs.forEach(tx => {
+    const tr = document.createElement('tr');
+    const tdDate = document.createElement('td'); tdDate.style.color='var(--text3)';
+    tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const tdMerchant = document.createElement('td'); tdMerchant.textContent = tx.merchant;
+    const tdAmt = document.createElement('td'); tdAmt.className = 'tx-amount-neg';
+    tdAmt.textContent = fmt(Math.abs(tx.amount));
+    const tdCat = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.className = 'category-pill';
+    sel.dataset.txid = tx.id;
+    sel.style.cssText = 'width:auto;padding:2px 8px;font-size:10px';
+    sel.onchange = function() { reclassify(this); };
+    [cat, ...otherCats].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      if (c === cat) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    tdCat.appendChild(sel);
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger'; delBtn.textContent = 'Delete';
+    delBtn.dataset.txid = tx.id;
+    delBtn.addEventListener('click', () => deleteTransaction(delBtn));
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDate); tr.appendChild(tdMerchant); tr.appendChild(tdAmt);
+    tr.appendChild(tdCat); tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  content.innerHTML = '';
+  content.appendChild(table);
+}
+
+function reclassify(sel) {
+  const txId = sel.dataset.txid;
+  const newCat = sel.value;
+  const tx = DB.transactions.find(t => t.id === txId);
+  if (tx) {
+    tx.category = newCat;
+    saveData(DB);
+    const ym = document.getElementById('expMonth').value || thisMonth();
+    renderExpenses();
+    if (currentDrillCategory !== newCat) drillCategory(currentDrillCategory, ym);
+  }
+}
+
+function deleteTransaction(btn) {
+  const txId = btn.dataset.txid;
+  const tx = DB.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  const label = tx.merchant + ' — ' + fmt(Math.abs(tx.amount));
+  if (!confirm('Delete "' + label + '"? This removes it from expenses and all totals. You can re-upload your CSV to restore it.')) return;
+  DB.transactions = DB.transactions.filter(t => t.id !== txId);
+  saveData(DB);
+  updateMetricsStrip();
+  renderExpenses();
+  if (currentDrillCategory && currentDrillYm) {
+    drillCategory(currentDrillCategory, currentDrillYm);
+  }
+  showToast('Transaction deleted');
+}
+
+function clearDrill() {
+  currentDrillCategory = null;
+  document.getElementById('expDrillTitle').textContent = 'Select a category';
+  document.getElementById('expDrillContent').innerHTML = '<div class="empty-state"><div class="empty-icon">👆</div>Click a category to see transactions</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  MONEY FLOW DRILL-DOWN
+// ═══════════════════════════════════════════════════════
+function editManualEntry(category) {
+  const year = new Date().getFullYear();
+  const existing = DB.transactions.find(t =>
+    t.isManual && t.category === category &&
+    new Date(t.date).getFullYear() === year
+  );
+  const currentVal = existing ? Math.abs(existing.amount) : 0;
+
+  openModal('Set YTD ' + category, `
+    <div class="form-group">
+      <label>YTD ${category} paid in ${year}</label>
+      <input type="number" id="editBalance" value="${currentVal}" step="0.01">
+    </div>
+    <div style="font-size:11px;color:var(--text3)">Current: ${fmt(currentVal)}</div>
+  `, [
+    { label: 'Cancel', cls: 'btn', action: closeModal },
+    { label: 'Save', cls: 'btn btn-accent', action: () => {
+      const el = document.getElementById('editBalance');
+      const raw = el ? el.value : '';
+      const amt = parseFloat(raw);
+      if (isNaN(amt) || amt <= 0) {
+        showToast('Please enter a valid amount');
+        return;
+      }
+      DB.transactions = DB.transactions.filter(t =>
+        !(t.isManual && t.category === category && new Date(t.date).getFullYear() === year)
+      );
+      DB.transactions.push({
+        id: 'manual_' + category.toLowerCase() + '_' + year,
+        date: year + '-01-01',
+        merchant: category + ' (YTD manual entry)',
+        amount: -amt,
+        category: category,
+        source: 'manual',
+        isManual: true
+      });
+      saveData(DB);
+      closeModal();
+      updateMetricsStrip();
+      renderOverviewCharts();
+      showToast(category + ' updated to ' + fmt(amt));
+    }}
+  ]);
+}
+
+function showFlowDrill(type) {
+  const year = parseInt(document.getElementById('flowYearSelect').value) || new Date().getFullYear();
+  const isCurrentYear = year === new Date().getFullYear();
+  const yearTxs = DB.transactions.filter(t => new Date(t.date).getFullYear() === year);
+
+  let title, txs, color;
+
+  if (type === 'grossIncome') {
+    const category = 'Gross Income';
+    title = 'Gross Income — ' + year + (isCurrentYear ? ' YTD' : ' Full Year');
+
+    document.getElementById('modalTitle').textContent = title;
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+
+    function rebuildGrossBody() {
+      body.innerHTML = '';
+      const currentTxs = DB.transactions.filter(t =>
+        new Date(t.date).getFullYear() === year && t.category === category
+      ).sort((a,b) => new Date(b.date)-new Date(a.date));
+      const currentTotal = currentTxs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6';
+      note.textContent = 'Enter your YTD gross income from paychecks. This is what the money flow diagram starts from.';
+      body.appendChild(note);
+
+      const addForm = document.createElement('div');
+      addForm.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;align-items:flex-end';
+      addForm.innerHTML = `
+        <div style="flex:1">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Description</label>
+          <input type="text" id="flowAddDesc" placeholder="e.g. Alex YTD Gross, Hannah YTD Gross" style="width:100%">
         </div>
-      `);
-      infoWindow.open(map, marker);
+        <div style="width:130px">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Amount</label>
+          <input type="number" id="flowAddAmt" placeholder="0.00" step="0.01" style="width:100%">
+        </div>
+        <button class="btn btn-accent btn-sm" id="flowAddBtn">+ Add</button>
+      `;
+      body.appendChild(addForm);
+
+      document.getElementById('flowAddBtn').onclick = () => {
+        const desc = document.getElementById('flowAddDesc').value.trim() || 'Gross Income';
+        const amt = parseFloat(document.getElementById('flowAddAmt').value);
+        if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount'); return; }
+        DB.transactions.push({
+          id: 'tx_manual_gross_' + Date.now(),
+          date: (isCurrentYear ? new Date() : new Date(year, 11, 31)).toISOString().slice(0,10),
+          merchant: desc,
+          amount: amt,  // positive — it's income
+          category: category,
+          source: 'manual',
+          isManual: true
+        });
+        saveData(DB);
+        updateMetricsStrip();
+        renderOverviewCharts();
+        rebuildGrossBody();
+        showToast('Gross income entry added');
+      };
+
+      if (currentTxs.length === 0) {
+        const empty = document.createElement('div');
+        empty.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center">No entries yet — add one above</div>';
+        body.appendChild(empty);
+      } else {
+        const table = document.createElement('table');
+        table.className = 'tx-table';
+        table.style.width = '100%';
+        table.innerHTML = '<thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th></th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        currentTxs.forEach(tx => {
+          const tr = document.createElement('tr');
+          const tdDate = document.createElement('td'); tdDate.style.color='var(--text3)';
+          tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const tdDesc = document.createElement('td'); tdDesc.textContent = tx.merchant;
+          const tdAmt = document.createElement('td');
+          tdAmt.style.cssText = 'color:var(--accent);font-family:var(--sans);font-weight:700;text-align:right';
+          tdAmt.textContent = fmt(Math.abs(tx.amount));
+          const tdDel = document.createElement('td');
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-sm btn-danger'; delBtn.textContent = 'Delete';
+          delBtn.onclick = () => {
+            DB.transactions = DB.transactions.filter(t => t.id !== tx.id);
+            saveData(DB); updateMetricsStrip(); renderOverviewCharts(); rebuildGrossBody();
+          };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdDate); tr.appendChild(tdDesc); tr.appendChild(tdAmt); tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        const scrollDiv = document.createElement('div');
+        scrollDiv.style.cssText = 'max-height:300px;overflow-y:auto';
+        scrollDiv.appendChild(table);
+        body.appendChild(scrollDiv);
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+        footer.innerHTML = '<span style="font-size:11px;color:var(--text3)">' + currentTxs.length + ' entries</span>' +
+          '<span style="font-family:var(--sans);font-weight:800;font-size:18px;color:var(--accent)">' + fmt(currentTotal) + '</span>';
+        body.appendChild(footer);
+      }
+    }
+
+    rebuildGrossBody();
+    const modalFooter = document.getElementById('modalFooter');
+    modalFooter.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn'; closeBtn.textContent = 'Close'; closeBtn.onclick = closeModal;
+    modalFooter.appendChild(closeBtn);
+    document.getElementById('modalOverlay').classList.add('open');
+    return;
+
+  } else if (type === 'insurance' || type === 'tax') {
+    const category = type === 'insurance' ? 'Insurance' : 'Tax';
+    color = type === 'insurance' ? 'var(--blue)' : 'var(--amber)';
+    title = category + ' — ' + year + ' YTD';
+    txs = yearTxs.filter(t => t.category === category).sort((a,b) => new Date(b.date)-new Date(a.date));
+    const total = txs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+    document.getElementById('modalTitle').textContent = title;
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+
+    function rebuildBody() {
+      body.innerHTML = '';
+      const currentTxs = DB.transactions.filter(t =>
+        new Date(t.date).getFullYear() === year && t.category === category
+      ).sort((a,b) => new Date(b.date)-new Date(a.date));
+      const currentTotal = currentTxs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+      // Add form
+      const addForm = document.createElement('div');
+      addForm.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;align-items:flex-end';
+      addForm.innerHTML = `
+        <div style="flex:1">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Description</label>
+          <input type="text" id="flowAddDesc" placeholder="e.g. Federal Tax Q1" style="width:100%">
+        </div>
+        <div style="width:130px">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Amount</label>
+          <input type="number" id="flowAddAmt" placeholder="0.00" step="0.01" style="width:100%">
+        </div>
+        <button class="btn btn-accent btn-sm" id="flowAddBtn">+ Add</button>
+      `;
+      body.appendChild(addForm);
+
+      // Wire up add button
+      document.getElementById('flowAddBtn').onclick = () => {
+        const desc = document.getElementById('flowAddDesc').value.trim() || category + ' payment';
+        const amt = parseFloat(document.getElementById('flowAddAmt').value);
+        if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount'); return; }
+        DB.transactions.push({
+          id: 'tx_manual_' + Date.now(),
+          date: (isCurrentYear ? new Date() : new Date(year, 11, 31)).toISOString().slice(0,10),
+          merchant: desc,
+          amount: -amt,
+          category: category,
+          source: 'manual',
+          isManual: true
+        });
+        saveData(DB);
+        updateMetricsStrip();
+        renderOverviewCharts();
+        rebuildBody();
+        showToast(category + ' entry added');
+      };
+
+      // Transaction list
+      if (currentTxs.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = '<div style="padding:20px;color:var(--text3)">No entries yet — add one above</div>';
+        body.appendChild(empty);
+      } else {
+        const table = document.createElement('table');
+        table.className = 'tx-table';
+        table.style.width = '100%';
+        table.innerHTML = '<thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th></th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        currentTxs.forEach(tx => {
+          const tr = document.createElement('tr');
+          const tdDate = document.createElement('td');
+          tdDate.style.color = 'var(--text3)';
+          tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const tdDesc = document.createElement('td');
+          tdDesc.textContent = tx.merchant;
+          const tdAmt = document.createElement('td');
+          tdAmt.style.cssText = 'color:' + color + ';font-family:var(--sans);font-weight:700;text-align:right';
+          tdAmt.textContent = fmt(Math.abs(tx.amount));
+          const tdDel = document.createElement('td');
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-sm btn-danger';
+          delBtn.textContent = 'Delete';
+          delBtn.onclick = () => {
+            DB.transactions = DB.transactions.filter(t => t.id !== tx.id);
+            saveData(DB);
+            updateMetricsStrip();
+            renderOverviewCharts();
+            rebuildBody();
+          };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdDate); tr.appendChild(tdDesc); tr.appendChild(tdAmt); tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        const scrollDiv = document.createElement('div');
+        scrollDiv.style.cssText = 'max-height:300px;overflow-y:auto';
+        scrollDiv.appendChild(table);
+        body.appendChild(scrollDiv);
+
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+        footer.innerHTML = '<span style="font-size:11px;color:var(--text3)">' + currentTxs.length + ' entries</span>' +
+          '<span style="font-family:var(--sans);font-weight:800;font-size:18px;color:' + color + '">' + fmt(currentTotal) + '</span>';
+        body.appendChild(footer);
+      }
+    }
+
+    rebuildBody();
+    const modalFooter = document.getElementById('modalFooter');
+    modalFooter.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn';
+    closeBtn.textContent = 'Close';
+    closeBtn.onclick = closeModal;
+    modalFooter.appendChild(closeBtn);
+    document.getElementById('modalOverlay').classList.add('open');
+    return;
+
+  } else if (type === 'investments') {
+    const category = 'Long Term Investments';
+    color = 'var(--purple)';
+    title = 'Long Term Investments — ' + year + ' YTD';
+    txs = yearTxs.filter(t => t.category === category).sort((a,b) => new Date(b.date)-new Date(a.date));
+    const total = txs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+    document.getElementById('modalTitle').textContent = title;
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+
+    function rebuildInvBody() {
+      body.innerHTML = '';
+      const currentTxs = DB.transactions.filter(t =>
+        new Date(t.date).getFullYear() === year && t.category === category
+      ).sort((a,b) => new Date(b.date)-new Date(a.date));
+      const currentTotal = currentTxs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+      const addForm = document.createElement('div');
+      addForm.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;align-items:flex-end';
+      addForm.innerHTML = `
+        <div style="flex:1">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Description</label>
+          <input type="text" id="flowAddDesc" placeholder="e.g. 401k contributions YTD" style="width:100%">
+        </div>
+        <div style="width:130px">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Amount</label>
+          <input type="number" id="flowAddAmt" placeholder="0.00" step="0.01" style="width:100%">
+        </div>
+        <button class="btn btn-accent btn-sm" id="flowAddBtn">+ Add</button>
+      `;
+      body.appendChild(addForm);
+
+      document.getElementById('flowAddBtn').onclick = () => {
+        const desc = document.getElementById('flowAddDesc').value.trim() || category + ' contribution';
+        const amt = parseFloat(document.getElementById('flowAddAmt').value);
+        if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount'); return; }
+        DB.transactions.push({
+          id: 'tx_manual_' + Date.now(),
+          date: (isCurrentYear ? new Date() : new Date(year, 11, 31)).toISOString().slice(0,10),
+          merchant: desc,
+          amount: -amt,
+          category: category,
+          source: 'manual',
+          isManual: true
+        });
+        saveData(DB);
+        updateMetricsStrip();
+        renderOverviewCharts();
+        rebuildInvBody();
+        showToast('Investment entry added');
+      };
+
+      if (currentTxs.length === 0) {
+        const empty = document.createElement('div');
+        empty.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center">No entries yet — add one above</div>';
+        body.appendChild(empty);
+      } else {
+        const table = document.createElement('table');
+        table.className = 'tx-table';
+        table.style.width = '100%';
+        table.innerHTML = '<thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th></th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        currentTxs.forEach(tx => {
+          const tr = document.createElement('tr');
+          const tdDate = document.createElement('td'); tdDate.style.color='var(--text3)';
+          tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const tdDesc = document.createElement('td'); tdDesc.textContent = tx.merchant;
+          const tdAmt = document.createElement('td');
+          tdAmt.style.cssText = 'color:var(--purple);font-family:var(--sans);font-weight:700;text-align:right';
+          tdAmt.textContent = fmt(Math.abs(tx.amount));
+          const tdDel = document.createElement('td');
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-sm btn-danger'; delBtn.textContent = 'Delete';
+          delBtn.onclick = () => {
+            DB.transactions = DB.transactions.filter(t => t.id !== tx.id);
+            saveData(DB); updateMetricsStrip(); renderOverviewCharts(); rebuildInvBody();
+          };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdDate); tr.appendChild(tdDesc); tr.appendChild(tdAmt); tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        const scrollDiv = document.createElement('div');
+        scrollDiv.style.cssText = 'max-height:300px;overflow-y:auto';
+        scrollDiv.appendChild(table);
+        body.appendChild(scrollDiv);
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+        footer.innerHTML = '<span style="font-size:11px;color:var(--text3)">' + currentTxs.length + ' entries</span>' +
+          '<span style="font-family:var(--sans);font-weight:800;font-size:18px;color:var(--purple)">' + fmt(currentTotal) + '</span>';
+        body.appendChild(footer);
+      }
+    }
+
+    rebuildInvBody();
+    const modalFooter = document.getElementById('modalFooter');
+    modalFooter.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn'; closeBtn.textContent = 'Close'; closeBtn.onclick = closeModal;
+    modalFooter.appendChild(closeBtn);
+    document.getElementById('modalOverlay').classList.add('open');
+    return;
+
+  } else if (type === 'expenses' && !isCurrentYear) {
+    const category = 'Expenses (manual)';
+    color = 'var(--red)';
+    title = 'Expenses — ' + year + ' Full Year';
+    txs = yearTxs.filter(t => t.category === category).sort((a,b) => new Date(b.date)-new Date(a.date));
+
+    document.getElementById('modalTitle').textContent = title;
+    const body = document.getElementById('modalBody');
+    body.innerHTML = '';
+
+    function rebuildExpBody() {
+      body.innerHTML = '';
+      const currentTxs = DB.transactions.filter(t =>
+        new Date(t.date).getFullYear() === year && t.category === category
+      ).sort((a,b) => new Date(b.date)-new Date(a.date));
+      const currentTotal = currentTxs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6';
+      note.textContent = 'Enter your total expenses for ' + year + '. Since this is a past year, expenses aren\'t pulled from bank transactions — enter the total(s) manually.';
+      body.appendChild(note);
+
+      const addForm = document.createElement('div');
+      addForm.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;align-items:flex-end';
+      addForm.innerHTML = `
+        <div style="flex:1">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Description</label>
+          <input type="text" id="flowAddDesc" placeholder="e.g. Total expenses ${year}" style="width:100%">
+        </div>
+        <div style="width:130px">
+          <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px">Amount</label>
+          <input type="number" id="flowAddAmt" placeholder="0.00" step="0.01" style="width:100%">
+        </div>
+        <button class="btn btn-accent btn-sm" id="flowAddBtn">+ Add</button>
+      `;
+      body.appendChild(addForm);
+
+      document.getElementById('flowAddBtn').onclick = () => {
+        const desc = document.getElementById('flowAddDesc').value.trim() || ('Expenses ' + year);
+        const amt = parseFloat(document.getElementById('flowAddAmt').value);
+        if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount'); return; }
+        DB.transactions.push({
+          id: 'tx_manual_' + Date.now(),
+          date: new Date(year, 11, 31).toISOString().slice(0,10),
+          merchant: desc,
+          amount: -amt,
+          category: category,
+          source: 'manual',
+          isManual: true
+        });
+        saveData(DB);
+        updateMetricsStrip();
+        renderOverviewCharts();
+        rebuildExpBody();
+        showToast('Expense entry added');
+      };
+
+      if (currentTxs.length === 0) {
+        const empty = document.createElement('div');
+        empty.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center">No entries yet — add one above</div>';
+        body.appendChild(empty);
+      } else {
+        const table = document.createElement('table');
+        table.className = 'tx-table';
+        table.style.width = '100%';
+        table.innerHTML = '<thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th></th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        currentTxs.forEach(tx => {
+          const tr = document.createElement('tr');
+          const tdDate = document.createElement('td'); tdDate.style.color='var(--text3)';
+          tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const tdDesc = document.createElement('td'); tdDesc.textContent = tx.merchant;
+          const tdAmt = document.createElement('td');
+          tdAmt.style.cssText = 'color:var(--red);font-family:var(--sans);font-weight:700;text-align:right';
+          tdAmt.textContent = fmt(Math.abs(tx.amount));
+          const tdDel = document.createElement('td');
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-sm btn-danger'; delBtn.textContent = 'Delete';
+          delBtn.onclick = () => {
+            DB.transactions = DB.transactions.filter(t => t.id !== tx.id);
+            saveData(DB); updateMetricsStrip(); renderOverviewCharts(); rebuildExpBody();
+          };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdDate); tr.appendChild(tdDesc); tr.appendChild(tdAmt); tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        const scrollDiv = document.createElement('div');
+        scrollDiv.style.cssText = 'max-height:300px;overflow-y:auto';
+        scrollDiv.appendChild(table);
+        body.appendChild(scrollDiv);
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+        footer.innerHTML = '<span style="font-size:11px;color:var(--text3)">' + currentTxs.length + ' entries</span>' +
+          '<span style="font-family:var(--sans);font-weight:800;font-size:18px;color:var(--red)">' + fmt(currentTotal) + '</span>';
+        body.appendChild(footer);
+      }
+    }
+
+    rebuildExpBody();
+    const modalFooter = document.getElementById('modalFooter');
+    modalFooter.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn'; closeBtn.textContent = 'Close'; closeBtn.onclick = closeModal;
+    modalFooter.appendChild(closeBtn);
+    document.getElementById('modalOverlay').classList.add('open');
+    return;
+
+  } else if (type === 'expenses') {
+    title = 'All Expense Transactions — ' + year + ' YTD';
+    txs = yearTxs.filter(t => t.amount < 0 && !isTransfer(t) && !isCreditCardPayment(t) && t.category !== 'Tax' && t.category !== 'Insurance');
+    color = 'var(--red)';
+  } else if (type === 'savings') {
+    const periodLabel = isCurrentYear ? ' YTD' : ' Full Year';
+    const income = getGrossIncomeOrFallback(year);
+    const manualExpenses = yearTxs.filter(t=>t.category==='Expenses (manual)').reduce((s,t)=>s+Math.abs(t.amount),0);
+    const expenses = isCurrentYear ? getYearSpent(year) : (manualExpenses || getYearSpent(year));
+    const tax = yearTxs.filter(t=>t.category==='Tax').reduce((s,t)=>s+Math.abs(t.amount),0);
+    const insurance = yearTxs.filter(t=>t.category==='Insurance').reduce((s,t)=>s+Math.abs(t.amount),0);
+    const ltInvestments = yearTxs.filter(t=>t.category==='Long Term Investments').reduce((s,t)=>s+Math.abs(t.amount),0);
+    const savings = income - expenses - tax - insurance - ltInvestments;
+    openModal('Savings — ' + year + periodLabel, `
+      <div style="font-size:13px;line-height:2;color:var(--text2)">
+        <div style="display:flex;justify-content:space-between"><span>Gross Income</span><span style="color:var(--accent);font-family:var(--sans);font-weight:700">${fmt(income)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>− Expenses</span><span style="color:var(--red);font-family:var(--sans);font-weight:700">−${fmt(expenses)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>− Tax</span><span style="color:var(--amber);font-family:var(--sans);font-weight:700">−${fmt(tax)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>− Insurance</span><span style="color:var(--blue);font-family:var(--sans);font-weight:700">−${fmt(insurance)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>− Long Term Investments</span><span style="color:var(--purple);font-family:var(--sans);font-weight:700">−${fmt(ltInvestments)}</span></div>
+        <div style="height:1px;background:var(--border);margin:8px 0"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text)">= Net Savings</span><span style="color:var(--accent);font-family:var(--sans);font-weight:800;font-size:18px">${fmt(savings)}</span></div>
+      </div>
+    `, [{ label:'Close', cls:'btn', action: closeModal }]);
+    return;
+  }
+
+  txs = txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+  const total = txs.reduce((s,t) => s + Math.abs(t.amount), 0);
+
+  if (txs.length === 0) {
+    openModal(title, '<div class="empty-state">No transactions found for this category</div>',
+      [{ label:'Close', cls:'btn', action: closeModal }]);
+    return;
+  }
+
+  // Build modal content with delete buttons via DOM to avoid quote issues
+  function buildFlowModal() {
+    const wrap = document.createElement('div');
+
+    const scrollDiv = document.createElement('div');
+    scrollDiv.style.cssText = 'max-height:400px;overflow-y:auto';
+
+    const table = document.createElement('table');
+    table.className = 'tx-table';
+    table.style.width = '100%';
+    table.innerHTML = '<thead><tr><th>Date</th><th>Merchant</th><th style="text-align:right">Amount</th><th></th></tr></thead>';
+    const tbody = document.createElement('tbody');
+
+    txs.forEach(tx => {
+      const tr = document.createElement('tr');
+
+      const tdDate = document.createElement('td');
+      tdDate.style.color = 'var(--text3)';
+      tdDate.textContent = new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+      const tdMerchant = document.createElement('td');
+      tdMerchant.textContent = tx.merchant;
+
+      const tdAmt = document.createElement('td');
+      tdAmt.style.cssText = 'color:' + color + ';font-family:var(--sans);font-weight:700;text-align:right';
+      tdAmt.textContent = fmt(Math.abs(tx.amount));
+
+      const tdDel = document.createElement('td');
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn btn-sm btn-danger';
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => {
+        if (!confirm('Delete "' + tx.merchant + ' ' + fmt(Math.abs(tx.amount)) + '"?')) return;
+        DB.transactions = DB.transactions.filter(t => t.id !== tx.id);
+        saveData(DB);
+        updateMetricsStrip();
+        renderOverviewCharts();
+        closeModal();
+        showToast('Transaction deleted');
+      };
+      tdDel.appendChild(delBtn);
+
+      tr.appendChild(tdDate);
+      tr.appendChild(tdMerchant);
+      tr.appendChild(tdAmt);
+      tr.appendChild(tdDel);
+      tbody.appendChild(tr);
     });
 
-    markers.push(marker);
-  });
+    table.appendChild(tbody);
+    scrollDiv.appendChild(table);
+    wrap.appendChild(scrollDiv);
 
-  document.getElementById('stat-showing').textContent = markers.length;
-  document.getElementById('stat-pastdue').textContent = pastDue;
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+    footer.innerHTML = '<span style="font-size:11px;color:var(--text3)">' + txs.length + ' transactions</span>' +
+      '<span style="font-family:var(--sans);font-weight:800;font-size:18px;color:' + color + '">' + fmt(total) + '</span>';
+    wrap.appendChild(footer);
+
+    return wrap;
+  }
+
+  // Use a DOM-based modal approach
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = '';
+  document.getElementById('modalBody').appendChild(buildFlowModal());
+  const footer = document.getElementById('modalFooter');
+  footer.innerHTML = '';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn';
+  closeBtn.textContent = 'Close';
+  closeBtn.onclick = closeModal;
+  footer.appendChild(closeBtn);
+  document.getElementById('modalOverlay').classList.add('open');
 }
 
-function setFilter(type, val, btn) {
-  filters[type] = val;
-  btn.closest('.filter-group').querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (map) applyFilters();
+// ═══════════════════════════════════════════════════════
+//  INCOME TAB
+// ═══════════════════════════════════════════════════════
+function populateIncomeYearSelector() {
+  const sel = document.getElementById('incomeYear');
+  if (!sel) return;
+  const currentYear = new Date().getFullYear();
+  sel.innerHTML = '';
+  for (let y = currentYear; y >= currentYear - 4; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    sel.appendChild(o);
+  }
 }
 
-function buildDashboard() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const sixMonthsAgo = new Date(today); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+function renderIncomeTab() {
+  populateIncomeYearSelector();
+  const sel = document.getElementById('incomeYear');
+  const year = sel ? parseInt(sel.value) : new Date().getFullYear();
+  const txs = getIncomeTransactions(year);
+  const total = txs.filter(t => !t.excludeFromIncome).reduce((s,t) => s + t.amount, 0);
 
-  const total = allFacilities.length;
-  const pastDueFollowUp = allFacilities.filter(f => f.followUp && new Date(f.followUp) < today).length;
-  const staleContact = allFacilities.filter(f => {
-    if (!f.lastContact) return true;
-    const d = new Date(f.lastContact);
-    return isNaN(d) ? false : d < sixMonthsAgo;
-  }).length;
-  const noFollowUp = allFacilities.filter(f => !f.followUp || f.followUp.trim() === '').length;
-  const offersMade = allFacilities.filter(f => f.status && f.status.toLowerCase().includes('offer')).length;
+  document.getElementById('incomeTotalDisplay').textContent = fmt(total);
 
-  const byPerson = {};
-  allFacilities.forEach(f => {
-    if (!byPerson[f.assigned]) byPerson[f.assigned] = { total: 0, pastDue: 0 };
-    byPerson[f.assigned].total++;
-    if (f.followUp && new Date(f.followUp) < today) byPerson[f.assigned].pastDue++;
-  });
+  const wrap = document.getElementById('incomeTableWrap');
+  if (txs.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">💰</div>No income transactions for ' + year + '<br><br>Upload your Old National checking/savings CSV to populate this</div>';
+    return;
+  }
 
-  const pastDueList = allFacilities
-    .filter(f => f.followUp && new Date(f.followUp) < today)
-    .sort((a,b) => new Date(a.followUp) - new Date(b.followUp))
-    .slice(0, 10);
-
-  const staleList = allFacilities
-    .filter(f => f.lastContact && !isNaN(new Date(f.lastContact)) && new Date(f.lastContact) < sixMonthsAgo)
-    .sort((a,b) => new Date(a.lastContact) - new Date(b.lastContact))
-    .slice(0, 10);
-
-  const ownerCards = Object.entries(byPerson).map(([name, s]) => `
-    <div class="owner-card">
-      <div class="owner-name">${name}</div>
-      <div class="owner-stat">${s.total} facilities</div>
-      <div class="owner-stat"><span>${s.pastDue} past due</span></div>
-    </div>
-  `).join('');
-
-  const pastDueRows = pastDueList.length ? pastDueList.map(f => `
-    <tr>
-      <td>${f.name}</td>
-      <td>${f.owner || '—'}</td>
-      <td>${f.assigned}</td>
-      <td><span class="badge badge-red">${f.followUp}</span></td>
-    </tr>
-  `).join('') : '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">None — all follow-ups current!</td></tr>';
-
-  const staleRows = staleList.length ? staleList.map(f => `
-    <tr>
-      <td>${f.name}</td>
-      <td>${f.owner || '—'}</td>
-      <td>${f.assigned}</td>
-      <td><span class="badge badge-yellow">${f.lastContact}</span></td>
-    </tr>
-  `).join('') : '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">All contacts are recent</td></tr>';
-
-  document.getElementById('dashboardContent').innerHTML = `
-    <div>
-      <div class="dash-section-title">Overview</div>
-      <div class="metrics-grid">
-        <div class="metric-card blue"><div class="metric-val blue">${total}</div><div class="metric-lbl">Total Facilities</div></div>
-        <div class="metric-card red"><div class="metric-val red">${pastDueFollowUp}</div><div class="metric-lbl">Past Due Follow-Ups</div></div>
-        <div class="metric-card yellow"><div class="metric-val yellow">${staleContact}</div><div class="metric-lbl">Last Contact &gt;6 Months</div></div>
-        <div class="metric-card gray"><div class="metric-val gray">${noFollowUp}</div><div class="metric-lbl">No Follow-Up Set</div></div>
-        <div class="metric-card green"><div class="metric-val green">${offersMade}</div><div class="metric-lbl">Offers Made</div></div>
-      </div>
-    </div>
-    <div>
-      <div class="dash-section-title">By Person</div>
-      <div class="owner-cards">${ownerCards}</div>
-    </div>
-    <div class="dash-row">
-      <div class="dash-card">
-        <div class="dash-section-title">Past Due Follow-Ups (Top 10)</div>
-        <table class="dash-table">
-          <thead><tr><th>Facility</th><th>Owner</th><th>Assigned</th><th>Due</th></tr></thead>
-          <tbody>${pastDueRows}</tbody>
-        </table>
-      </div>
-      <div class="dash-card">
-        <div class="dash-section-title">Stale Last Contact &gt;6mo (Top 10)</div>
-        <table class="dash-table">
-          <thead><tr><th>Facility</th><th>Owner</th><th>Assigned</th><th>Last Contact</th></tr></thead>
-          <tbody>${staleRows}</tbody>
-        </table>
-      </div>
+  wrap.innerHTML = `
+    <table class="tx-table">
+      <thead><tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Source</th>
+        <th style="text-align:center">In Total</th>
+        <th></th>
+      </tr></thead>
+      <tbody>
+        ${txs.map(tx => `
+          <tr style="${tx.excludeFromIncome ? 'opacity:0.4' : ''}">
+            <td style="color:var(--text3)">${new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+            <td>${tx.merchant}</td>
+            <td style="color:var(--accent);font-family:var(--sans);font-weight:700">${fmt(tx.amount)}</td>
+            <td style="color:var(--text3);font-size:11px">${tx.source || '—'}</td>
+            <td style="text-align:center">${tx.excludeFromIncome ? '<span style="color:var(--red)">excluded</span>' : '<span style="color:var(--accent)">✓</span>'}</td>
+            <td>
+              <button class="btn btn-sm ${tx.excludeFromIncome ? 'btn-accent' : 'btn-danger'}"
+                onclick="toggleIncomeExclusion('${tx.id}')">
+                ${tx.excludeFromIncome ? '+ Include' : '✕ Exclude'}
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div style="padding:14px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--text3)">${txs.filter(t=>!t.excludeFromIncome).length} of ${txs.length} transactions included</span>
+      <span style="font-family:var(--sans);font-weight:700;font-size:18px;color:var(--accent)">${year} Total: ${fmt(total)}</span>
     </div>
   `;
 }
 
-function showView(view, btn) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + view).classList.add('active');
-  btn.classList.add('active');
+function toggleIncomeExclusion(txId) {
+  const tx = DB.transactions.find(t => t.id === txId);
+  if (tx) {
+    tx.excludeFromIncome = !tx.excludeFromIncome;
+    saveData(DB);
+    renderIncomeTab();
+    updateMetricsStrip();
+  }
 }
 
-function showError(msg) {
-  document.querySelector('.error-banner') && document.querySelector('.error-banner').remove();
-  const banner = document.createElement('div');
-  banner.className = 'error-banner';
-  banner.textContent = msg;
-  document.querySelector('.main').prepend(banner);
+// ═══════════════════════════════════════════════════════
+//  RULES
+// ═══════════════════════════════════════════════════════
+function renderRules() {
+  const cats = getCategories();
+
+  // Populate category selects
+  ['ruleCategory'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) sel.innerHTML = cats.map(c=>`<option>${c}</option>`).join('');
+  });
+
+  // Render category chips
+  const chipsEl = document.getElementById('categoryChips');
+  if (chipsEl) {
+    chipsEl.innerHTML = cats.map((c, i) => {
+      const isDefault = DEFAULT_CATEGORIES.includes(c);
+      return `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;
+        background:var(--bg4);border:1px solid var(--border2);border-radius:6px;font-size:11px">
+        <span>${c}</span>
+        ${isDefault
+          ? '<span style="color:var(--text3);font-size:9px">default</span>'
+          : `<button onclick="deleteCategory(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 2px" title="Remove">✕</button>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  const list = document.getElementById('rulesList');
+  list.innerHTML = '';
+  document.getElementById('ruleCount').textContent = DB.rules.length;
+
+  if (DB.rules.length === 0) {
+    list.innerHTML = '<div class="empty-state">No rules yet</div>';
+    return;
+  }
+
+  DB.rules.forEach((rule, i) => {
+    const row = document.createElement('div');
+    row.className = 'rule-row';
+    row.innerHTML = `
+      <div class="rule-keyword">${rule.keyword}</div>
+      <div class="rule-arrow">→</div>
+      <div class="rule-category">${rule.category}</div>
+      <div class="rule-actions">
+        <button class="btn btn-sm btn-accent" onclick="applyOneRule(${i})" title="Re-categorize all matching transactions">Apply</button>
+        <button class="btn btn-sm" onclick="editRule(${i})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteRule(${i})">Delete</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
 }
-</script>
 
-<script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q&callback=initMap">
-</script>
+function addCategory() {
+  const input = document.getElementById('newCatInput');
+  const name = (input.value || '').trim();
+  if (!name) return;
+  const cats = getCategories();
+  if (cats.map(c=>c.toLowerCase()).includes(name.toLowerCase())) {
+    showToast('Category already exists');
+    return;
+  }
+  // Insert before Misc (always keep Misc last)
+  const miscIdx = cats.indexOf('Misc');
+  if (miscIdx >= 0) cats.splice(miscIdx, 0, name);
+  else cats.push(name);
+  saveCategories(cats);
+  input.value = '';
+  renderRules();
+  showToast(`"${name}" added!`);
+}
 
+function deleteCategory(idx) {
+  const cats = getCategories();
+  const name = cats[idx];
+  if (DEFAULT_CATEGORIES.includes(name)) { showToast("Can't delete a default category"); return; }
+  if (!confirm(`Delete category "${name}"? Rules using it will switch to Misc.`)) return;
+  // Reassign any rules using this category
+  DB.rules.forEach(r => { if (r.category === name) r.category = 'Misc'; });
+  // Reassign any transactions using this category
+  DB.transactions.forEach(t => { if (t.category === name) t.category = 'Misc'; });
+  cats.splice(idx, 1);
+  saveCategories(cats);
+  saveData(DB);
+  renderRules();
+  renderExpenses();
+  showToast(`"${name}" removed`);
+}
+
+function applyOneRule(i) {
+  // Apply a single rule to ALL transactions that match its keywords, regardless of current category
+  const rule = DB.rules[i];
+  const keywords = rule.keyword.split(',').map(k => k.trim().toUpperCase());
+  let changed = 0;
+  DB.transactions.forEach(tx => {
+    if (tx.amount >= 0) return; // skip credits/income
+    const merchant = (tx.merchant || '').toUpperCase();
+    const matches = keywords.some(k => k && merchant.includes(k));
+    if (matches && tx.category !== rule.category) {
+      tx.category = rule.category;
+      changed++;
+    }
+  });
+  saveData(DB);
+  renderExpenses();
+  updateMetricsStrip();
+  showToast(changed + ' transaction' + (changed !== 1 ? 's' : '') + ' moved to ' + rule.category);
+}
+
+function addRule() {
+  const kw = document.getElementById('ruleKeyword').value.trim();
+  const cat = document.getElementById('ruleCategory').value;
+  if (!kw) return;
+  DB.rules.push({ keyword: kw.toUpperCase(), category: cat });
+  saveData(DB);
+  document.getElementById('ruleKeyword').value = '';
+  renderRules();
+  // Auto-apply the new rule immediately
+  applyOneRule(DB.rules.length - 1);
+}
+
+function deleteRule(i) {
+  DB.rules.splice(i, 1);
+  saveData(DB);
+  renderRules();
+}
+
+function editRule(i) {
+  const rule = DB.rules[i];
+  openModal('Edit Rule', `
+    <div class="form-group">
+      <label>Keyword(s)</label>
+      <input type="text" id="editRuleKw" value="${rule.keyword}">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="editRuleCat">${getCategories().map(c=>`<option${c===rule.category?' selected':''}>${c}</option>`).join('')}</select>
+    </div>
+  `, [
+    { label:'Cancel', cls:'btn', action: closeModal },
+    { label:'Save', cls:'btn btn-accent', action: () => {
+      rule.keyword = document.getElementById('editRuleKw').value.trim().toUpperCase();
+      rule.category = document.getElementById('editRuleCat').value;
+      saveData(DB);
+      renderRules();
+      closeModal();
+      applyOneRule(i);
+    }}
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  HISTORY TAB
+// ═══════════════════════════════════════════════════════
+function renderHistoryTab() {
+  renderNWHistoryChart();
+  renderSnapshotTable();
+  renderAccountGrowthChart();
+  populateHistAcctSelect();
+}
+
+function renderNWHistoryChart() {
+  const snaps = [...DB.snapshots].reverse();
+  destroyChart('chartNWHistory');
+  if (snaps.length < 1) return;
+
+  // Group by year for coloring
+  const currentYear = new Date().getFullYear();
+  const colors = { [currentYear]:'#4ade80', [currentYear-1]:'#60a5fa', [currentYear-2]:'#fbbf24', [currentYear-3]:'#a78bfa', [currentYear-4]:'#f87171' };
+
+  const datasets = [];
+  const years = [...new Set(snaps.map(s=>new Date(s.date).getFullYear()))].sort();
+  years.forEach(y => {
+    const ySnaps = snaps.filter(s=>new Date(s.date).getFullYear()===y);
+    datasets.push({
+      label: String(y),
+      data: ySnaps.map(s=>({ x:new Date(s.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}), y:s.netWorth })),
+      borderColor: colors[y] || '#888',
+      backgroundColor: (colors[y]||'#888').replace(')',',0.08)').replace('rgb','rgba'),
+      borderWidth: y===currentYear?2:1.5,
+      tension:0.4, fill:y===currentYear, pointRadius:4
+    });
+  });
+
+  charts.chartNWHistory = new Chart(document.getElementById('chartNWHistory'), {
+    type:'line',
+    data:{ datasets },
+    options:{
+      responsive:true,
+      parsing:false,
+      plugins:{
+        legend:{ labels:{ color:'#8a8f9e', font:{family:'DM Mono',size:11}, boxWidth:12 } },
+        tooltip:{ backgroundColor:'#1e222c', titleColor:'#e8eaf0', bodyColor:'#8a8f9e', borderColor:'rgba(255,255,255,0.12)', borderWidth:1,
+          callbacks:{ label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}` }
+        }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11},
+            callback: v=>'$'+v.toLocaleString()} }
+      }
+    }
+  });
+}
+
+function populateHistAcctSelect() {
+  const sel = document.getElementById('histAcctSelect');
+  const allAc = [...DB.accounts.cash, ...DB.accounts.investments, ...DB.accounts.other, ...DB.accounts.liabilities];
+  sel.innerHTML = allAc.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+function renderAccountGrowthChart() {
+  const sel = document.getElementById('histAcctSelect');
+  if (!sel || !sel.value) return;
+  const acId = sel.value;
+
+  const snaps = [...DB.snapshots].reverse();
+  const allGroups = ['cash','investments','other','liabilities'];
+  const dataPoints = snaps.map(snap => {
+    for (const g of allGroups) {
+      const ac = snap.accounts?.[g]?.find(a=>a.id===acId);
+      if (ac) return { x:new Date(snap.date).toLocaleDateString('en-US',{month:'short',year:'2-digit'}), y:ac.balance };
+    }
+    return null;
+  }).filter(Boolean);
+
+  destroyChart('chartAcctGrowth');
+  charts.chartAcctGrowth = new Chart(document.getElementById('chartAcctGrowth'), {
+    type:'line',
+    data:{
+      datasets:[{
+        label: sel.options[sel.selectedIndex].text,
+        data: dataPoints,
+        borderColor:'#60a5fa', backgroundColor:'rgba(96,165,250,0.08)',
+        borderWidth:2, fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#60a5fa'
+      }]
+    },
+    options:{
+      responsive:true,
+      parsing:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{ backgroundColor:'#1e222c', titleColor:'#e8eaf0', bodyColor:'#8a8f9e', borderColor:'rgba(255,255,255,0.12)', borderWidth:1 }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#545868',font:{family:'DM Mono',size:11},
+            callback:v=>'$'+v.toLocaleString()} }
+      }
+    }
+  });
+}
+
+function renderSnapshotTable() {
+  const tbody = document.getElementById('snapshotTableBody');
+  tbody.innerHTML = '';
+  if (DB.snapshots.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">No snapshots yet</td></tr>';
+    return;
+  }
+
+  DB.snapshots.forEach((snap, i) => {
+    const prev = DB.snapshots[i+1];
+    const delta = prev ? snap.netWorth - prev.netWorth : null;
+    const tr = document.createElement('tr');
+    const dateStr = new Date(snap.date).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+    const badge = snap.historical
+      ? '<span class="badge badge-green">historical</span>'
+      : snap.auto ? '<span class="badge badge-blue">auto</span>' : '';
+    const deltaColor = delta===null ? 'var(--text3)' : delta>=0 ? 'var(--accent)' : 'var(--red)';
+    const deltaStr = delta===null ? '—' : (delta>=0?'▲':'▼')+' '+fmt(Math.abs(delta));
+    tr.innerHTML = `
+      <td>${dateStr} ${badge}</td>
+      <td style="font-family:var(--sans);font-weight:700;color:var(--accent)">${fmt(snap.netWorth)}</td>
+      <td style="color:${deltaColor}">${deltaStr}</td>
+      <td style="color:var(--text3)">${snap.historical ? '—' : fmt(snap.cash)}</td>
+      <td style="color:var(--text3)">${snap.historical ? '—' : fmt(snap.investments)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteSnapshot(${i})">Delete</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteSnapshot(i) {
+  if (!confirm('Delete this snapshot?')) return;
+  DB.snapshots.splice(i, 1);
+  saveData(DB);
+  renderHistoryTab();
+}
+
+// ═══════════════════════════════════════════════════════
+//  UPLOAD + AI PROCESSING
+// ═══════════════════════════════════════════════════════
+function setupDragDrop() {
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    addFiles([...e.dataTransfer.files]);
+  });
+}
+
+function handleFileSelect(e) { addFiles([...e.target.files]); }
+
+function addFiles(files) {
+  files.forEach(f => {
+    if (!uploadedFiles.find(u=>u.name===f.name)) uploadedFiles.push(f);
+  });
+  renderUploadList();
+}
+
+function renderUploadList() {
+  const list = document.getElementById('uploadFileList');
+  list.innerHTML = uploadedFiles.map(f=>`
+    <div class="upload-file-chip">
+      <span>${fileEmoji(f.name)}</span>
+      <span>${f.name}</span>
+      <span style="color:var(--text3)">(${(f.size/1024).toFixed(0)}KB)</span>
+    </div>
+  `).join('');
+}
+
+function fileEmoji(name) {
+  if (name.match(/\.csv$/i)) return '📊';
+  if (name.match(/\.pdf$/i)) return '📄';
+  if (name.match(/\.(png|jpg|jpeg)$/i)) return '🖼';
+  return '📎';
+}
+
+function deleteAllTransactions() {
+  const count = DB.transactions.length;
+  if (count === 0) { showToast('No transactions to delete'); return; }
+  if (!confirm('Delete all ' + count + ' transactions?\n\nThis clears every expense and income transaction for all months. Your account balances, rules, and snapshots are not affected.\n\nYou can re-upload your CSVs to start fresh.')) return;
+  DB.transactions = [];
+  DB.income = {};
+  saveData(DB);
+  renderAll();
+  populateMonthSelectors();
+  showToast(count + ' transactions deleted — ready for fresh upload');
+}
+
+function clearUploadFiles() {
+  uploadedFiles = [];
+  document.getElementById('fileInput').value = '';
+  renderUploadList();
+  document.getElementById('aiStatus').style.display = 'none';
+  document.getElementById('aiSummaryCard').style.display = 'none';
+}
+
+function updateApiKeyStatus() {
+  const el = document.getElementById('apiKeyStatus');
+  if (DB.apiKey) {
+    el.textContent = '✅ API key configured — uploads will use Claude AI for processing';
+  } else {
+    el.textContent = '⚠️ No API key set — click "API Key" in the header to configure';
+  }
+}
+
+async function processUpload() {
+  if (uploadedFiles.length === 0) { showToast('Add files first'); return; }
+  if (!DB.apiKey) { openApiKeyModal(); return; }
+
+  const statusDiv = document.getElementById('aiStatus');
+  const statusLines = document.getElementById('aiStatusLines');
+  statusDiv.style.display = 'block';
+  document.getElementById('aiSummaryCard').style.display = 'none';
+  statusLines.innerHTML = '';
+
+  function addLine(msg, done=false, err=false) {
+    const line = document.createElement('div');
+    line.className = 'ai-status-line';
+    line.innerHTML = done ? `<span>✅</span> ${msg}` : err ? `<span>❌</span> ${msg}` : `<div class="spinner"></div> ${msg}`;
+    statusLines.appendChild(line);
+    statusDiv.scrollTop = statusDiv.scrollHeight;
+    return line;
+  }
+
+  // ── STEP 1: Read all files ──────────────────────────────
+  const l1 = addLine('Reading uploaded files...');
+  const csvFiles = [], imageFiles = [];
+
+  for (const file of uploadedFiles) {
+    if (file.name.match(/\.csv$/i)) {
+      const text = await file.text();
+      csvFiles.push({ name: file.name, content: text });
+    } else if (file.name.match(/\.(png|jpg|jpeg)$/i)) {
+      const b64 = await toBase64(file);
+      imageFiles.push({ name: file.name, b64, mime: mimeType(file.name) });
+    } else if (file.name.match(/\.pdf$/i)) {
+      // PDFs: convert to image isn't possible in browser; note it for user
+      imageFiles.push({ name: file.name, b64: null, isPdf: true });
+    }
+  }
+  l1.innerHTML = '<span>✅</span> Files read — ' +
+    `${csvFiles.length} CSV${csvFiles.length!==1?'s':''}, ` +
+    `${imageFiles.filter(f=>!f.isPdf).length} image${imageFiles.filter(f=>!f.isPdf).length!==1?'s':''}, ` +
+    `${imageFiles.filter(f=>f.isPdf).length} PDF${imageFiles.filter(f=>f.isPdf).length!==1?'s':''}`;
+
+  const rulesText = DB.rules.map(r=>`${r.keyword} → ${r.category}`).join('\n');
+  const categories = getCategories().join(', ');
+  let allTransactions = [], allIncome = {}, allAccountUpdates = [], summaries = [];
+
+  // ── STEP 2: Process CSVs — split by row count to avoid output token overflow ──
+  if (csvFiles.length > 0) {
+    const MAX_ROWS_PER_BATCH = 175; // ~175 rows × ~80 chars JSON each = ~14K tokens output, safe under 16K
+
+    // Parse each CSV into header + data rows, then chunk by row count
+    const rowBatches = []; // each entry: { header, rows, fileName }
+
+    for (const f of csvFiles) {
+      const lines = f.content.trim().split('\n');
+      const header = lines[0];
+      const dataRows = lines.slice(1).filter(l => l.trim());
+
+      for (let start = 0; start < dataRows.length; start += MAX_ROWS_PER_BATCH) {
+        const chunk = dataRows.slice(start, start + MAX_ROWS_PER_BATCH);
+        rowBatches.push({
+          header,
+          rows: chunk,
+          fileName: f.name,
+          rowRange: `rows ${start+1}–${Math.min(start+MAX_ROWS_PER_BATCH, dataRows.length)} of ${dataRows.length}`
+        });
+      }
+    }
+
+    const sysPrompt = `You are a financial data extractor. Extract every transaction from the CSV rows provided.
+Classification rules (match merchant name, case-insensitive substring):
+${rulesText}
+Default category if no rule matches: Misc
+Available categories: ${categories}
+
+CRITICAL: Return ONLY valid JSON — no markdown, no explanation, no fences. Start with { end with }.
+{"transactions":[{"date":"YYYY-MM-DD","merchant":"string","amount":-12.50,"category":"string","source":"filename"}],"income":{},"account_updates":[],"summary":"N transactions extracted"}
+
+=== CHASE CSV FORMAT ===
+Columns: Transaction Date, Post Date, Description, Category, Type, Amount, Memo
+- Amount is already signed (negative = expense, positive = credit/return)
+- Include: Type=Sale (negative), Type=Return (positive), Type=Fee (negative)
+- EXCLUDE entirely: Type=Payment rows (e.g. "AUTOMATIC PAYMENT")
+- source field = "chase"
+
+=== OLD NATIONAL BANK CSV FORMAT ===
+Columns: Transaction Number, Date, Description, Memo, Amount Debit, Amount Credit, Balance, Check Number
+- Amount Debit column = money OUT (expenses) — use as NEGATIVE number
+- Amount Credit column = money IN (deposits) — use as POSITIVE number
+- If filename contains "checking" set source = "on_checking"; if "savings" set source = "on_savings"
+- INCLUDE as income transactions (positive amount): payroll, direct deposit, BASF AGRICULTURA, DEACONESS HOSPIT PAYROLL, VENMO CASHOUT, Mobile Deposit, tax refunds, any Amount Credit entry that is not a transfer
+- EXCLUDE entirely — do not add to transactions array: rows where Description or Memo contains any of: TRANSFER, INT TXFR, ZELLE TO, ACH TO, ONLINE PMT, DISCOVER E-PAYMENT, TRUIST MORTG, CHASE PAYMENT, AUTOMATIC PAYMENT
+- For Old National debits (expenses): include as negative amount with appropriate category
+- Convert Old National dates from MM/DD/YYYY to YYYY-MM-DD
+
+=== GENERAL RULES ===
+- merchant = Description column value (trim whitespace)
+- Extract EVERY qualifying row — do not skip or truncate
+- income object in response: always return as {}  (income is read from transactions directly)`;
+
+    for (let i = 0; i < rowBatches.length; i++) {
+      const batch = rowBatches[i];
+      const lBatch = addLine(`Processing batch ${i+1} of ${rowBatches.length}: ${batch.fileName} (${batch.rowRange})...`);
+      const textPart = `Extract all transactions from this CSV chunk:\n\nFile: ${batch.fileName} (${batch.rowRange})\n\n${batch.header}\n${batch.rows.join('\n')}`;
+
+      try {
+        const resp = await callClaude(sysPrompt, [{ type:'text', text: textPart }]);
+        const result = parseClaudeJSON(resp);
+        const txCount = (result.transactions||[]).length;
+        allTransactions.push(...(result.transactions || []));
+        Object.entries(result.income || {}).forEach(([k,v]) => allIncome[k] = (allIncome[k]||0)+v);
+        allAccountUpdates.push(...(result.account_updates || []));
+        lBatch.innerHTML = `<span>✅</span> Batch ${i+1}: ${txCount} transactions (${batch.rowRange})`;
+      } catch(e) {
+        lBatch.innerHTML = `<span>⚠️</span> Batch ${i+1} error: ${e.message}`;
+      }
+    }
+  }
+
+  // ── STEP 3: Process images (pay stubs, investment screenshots) ──
+  const realImages = imageFiles.filter(f => !f.isPdf && f.b64);
+  if (realImages.length > 0) {
+    const lImg = addLine(`Processing ${realImages.length} image${realImages.length!==1?'s':''} with AI...`);
+    const imgContent = [];
+    realImages.forEach(f => {
+      imgContent.push({ type:'image', source:{ type:'base64', media_type: f.mime, data: f.b64.split(',')[1] }});
+      imgContent.push({ type:'text', text: `(Above image filename: ${f.name})` });
+    });
+    imgContent.push({ type:'text', text: 'Extract income amounts from pay stubs and account balances from investment screenshots. Return ONLY JSON.' });
+
+    const imgSys = `You are a financial data extractor reading pay stubs and investment screenshots.
+Return ONLY valid JSON, no markdown, no explanation. Start with { end with }.
+{"transactions":[],"income":{"YYYY-MM":0.00},"account_updates":[{"id":"account_id","balance":0.00,"name":"account name"}],"summary":"what you found"}
+
+Account IDs: on_checking (Old National Checking), on_savings (Old National Savings), vanguard (Vanguard), ira (IRA), k401 (401k), hsa (HSA), mortgage (Home Mortgage), business_equity (Business Equity), home_value (Home Value)
+For pay stubs: extract net pay (take-home amount after taxes) and the pay period month as YYYY-MM for the income field.
+For investment screenshots: extract the total account value as balance.`;
+
+    try {
+      const resp = await callClaude(imgSys, imgContent);
+      const result = parseClaudeJSON(resp);
+      allTransactions.push(...(result.transactions || []));
+      Object.entries(result.income || {}).forEach(([k,v]) => allIncome[k] = (allIncome[k]||0)+v);
+      allAccountUpdates.push(...(result.account_updates || []));
+      if (result.summary) summaries.push('Images: ' + result.summary);
+      lImg.innerHTML = `<span>✅</span> Images processed: ${result.summary || 'done'}`;
+    } catch(e) {
+      lImg.innerHTML = `<span>⚠️</span> Image processing error: ${e.message}`;
+    }
+  }
+
+  // Note PDFs
+  const pdfs = imageFiles.filter(f => f.isPdf);
+  if (pdfs.length > 0) {
+    addLine(`⚠️ ${pdfs.map(f=>f.name).join(', ')} — PDFs can't be read directly. Take a screenshot of the key page and upload that instead.`, true);
+  }
+
+  // ── STEP 4: Apply all results ───────────────────────────
+  const lSave = addLine('Saving data...');
+
+  const newTxs = allTransactions.map(tx => ({
+    ...tx,
+    id: 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2)
+  }));
+
+  const existingKeys = new Set(DB.transactions.map(t=>`${t.date}|${t.merchant}|${t.amount}`));
+  const unique = newTxs.filter(t => !existingKeys.has(`${t.date}|${t.merchant}|${t.amount}`));
+  DB.transactions.push(...unique);
+
+  Object.entries(allIncome).forEach(([ym, amt]) => {
+    DB.income[ym] = (DB.income[ym] || 0) + amt;
+  });
+
+  allAccountUpdates.forEach(upd => {
+    const allGroups = ['cash','investments','other','liabilities'];
+    for (const g of allGroups) {
+      const ac = DB.accounts[g].find(a=>a.id===upd.id);
+      if (ac) { ac.balance = upd.balance; break; }
+    }
+  });
+
+  saveData(DB);
+  lSave.innerHTML = '<span>✅</span> All data saved';
+
+  const summaryCard = document.getElementById('aiSummaryCard');
+  summaryCard.style.display = 'block';
+  document.getElementById('aiSummaryText').textContent =
+    (summaries.join('\n') || 'Processing complete.') +
+    `\n\n• ${unique.length} new transactions imported (${newTxs.length - unique.length} duplicates skipped)` +
+    `\n• Income transactions found: ${unique.filter(t => t.amount > 0 && (t.source === 'on_checking' || t.source === 'on_savings')).length} deposits from Old National accounts` +
+    `\n• Account updates: ${allAccountUpdates.map(a=>`${a.name||a.id}: ${fmt(a.balance)}`).join(', ')||'none'}`;
+
+  renderAll();
+  populateMonthSelectors();
+}
+
+async function callClaude(system, messageContent) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': DB.apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({
+      model:'claude-sonnet-4-5',
+      max_tokens:16000,
+      system,
+      messages:[{ role:'user', content: messageContent }]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || `API error ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content.find(c=>c.type==='text')?.text || '{}';
+}
+
+function parseClaudeJSON(raw) {
+  // Strip markdown fences
+  let clean = raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  // Find JSON object start
+  const start = clean.indexOf('{');
+  if (start > 0) clean = clean.slice(start);
+  // Try direct parse first
+  try { return JSON.parse(clean); } catch {}
+  // If truncated, try to recover partial transactions
+  const result = { transactions: [], income: {}, account_updates: [], summary: 'Partial import (response truncated)' };
+  const txMatches = [...raw.matchAll(/"date":"(\d{4}-\d{2}-\d{2})","merchant":"([^"]+)","amount":([-\d.]+),"category":"([^"]+)"(?:,"source":"([^"]*)")?/g)];
+  txMatches.forEach(m => result.transactions.push({ date:m[1], merchant:m[2], amount:parseFloat(m[3]), category:m[4], source:m[5]||'' }));
+  // Try income
+  const incMatch = raw.match(/"income"\s*:\s*\{([^}]*)\}/);
+  if (incMatch) { try { result.income = JSON.parse('{'+incMatch[1]+'}'); } catch {} }
+  return result;
+}
+
+
+function mimeType(name) {
+  if (name.match(/\.png$/i)) return 'image/png';
+  if (name.match(/\.jpg$/i)||name.match(/\.jpeg$/i)) return 'image/jpeg';
+  return 'image/png';
+}
+
+function toBase64(file) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  API KEY MODAL
+// ═══════════════════════════════════════════════════════
+function openApiKeyModal() {
+  openModal('Anthropic API Key', `
+    <div style="margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7">
+      Your API key is stored only in your browser's localStorage and never sent anywhere except directly to the Anthropic API.
+    </div>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="apiKeyInput" value="${DB.apiKey}" placeholder="sk-ant-...">
+    </div>
+    <div style="font-size:11px;color:var(--text3)">Get your key at console.anthropic.com</div>
+  `, [
+    { label:'Cancel', cls:'btn', action: closeModal },
+    { label:'Save', cls:'btn btn-accent', action: () => {
+      DB.apiKey = document.getElementById('apiKeyInput').value.trim();
+      localStorage.setItem('fin_apiKey', DB.apiKey);
+      updateApiKeyStatus();
+      closeModal();
+      showToast('API key saved!');
+    }}
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODAL SYSTEM
+// ═══════════════════════════════════════════════════════
+function openModal(title, bodyHTML, buttons=[]) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHTML;
+  const footer = document.getElementById('modalFooter');
+  footer.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = b.cls;
+    btn.textContent = b.label;
+    btn.onclick = b.action;
+    footer.appendChild(btn);
+  });
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:12px 20px;font-size:13px;z-index:400;animation:fadeInUp 0.3s ease';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+const style = document.createElement('style');
+style.textContent = '@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}';
+document.head.appendChild(style);
+
+// ═══════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+</script>
 </body>
 </html>
