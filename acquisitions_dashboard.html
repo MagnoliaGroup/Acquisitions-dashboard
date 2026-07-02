@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Acquisitions Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -117,6 +117,47 @@
   .iw-label { color: var(--text-muted); font-family: var(--mono); }
   .iw-val { color: var(--text); text-align: right; max-width: 160px; }
   .iw-notes { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; max-height: 80px; overflow-y: auto; }
+
+  /* ── MOBILE BOTTOM SHEET ───────────────────────────────────────── */
+  .bottom-sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; background: var(--surface); border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; padding: 0 20px 32px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); box-shadow: 0 -8px 40px rgba(0,0,0,0.5); max-height: 75vh; overflow-y: auto; }
+  .bottom-sheet.open { transform: translateY(0); }
+  .bs-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 16px; }
+  .bs-name { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .bs-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-family: var(--mono); margin-bottom: 14px; }
+  .bs-badge.red { background: rgba(217,64,64,0.2); color: #F08080; border: 1px solid rgba(217,64,64,0.3); }
+  .bs-badge.green { background: rgba(74,140,63,0.2); color: #7EC472; border: 1px solid rgba(74,140,63,0.3); }
+  .bs-badge.gray { background: rgba(122,127,150,0.15); color: var(--text-muted); border: 1px solid var(--border); }
+  .bs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .bs-field { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .bs-label { font-size: 10px; font-family: var(--mono); color: var(--text-muted); margin-bottom: 3px; letter-spacing: 0.05em; }
+  .bs-val { font-size: 13px; color: var(--text); font-weight: 500; }
+  .bs-notes { background: var(--surface2); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .mobile-fab { display: none; position: fixed; bottom: 24px; right: 16px; z-index: 100; background: var(--accent); border: none; border-radius: 50px; color: #fff; font-family: var(--font); font-size: 13px; font-weight: 500; padding: 12px 20px; box-shadow: 0 4px 20px rgba(59,125,216,0.4); cursor: pointer; align-items: center; gap: 8px; }
+  .mobile-fab.syncing { opacity: 0.6; pointer-events: none; }
+  .mobile-filter-btn { display: none; position: fixed; bottom: 24px; left: 16px; z-index: 100; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; color: var(--text); font-family: var(--font); font-size: 13px; padding: 12px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); cursor: pointer; align-items: center; gap: 8px; }
+  .mobile-filter-sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001; background: var(--surface); border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; padding: 0 20px 40px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+  .mobile-filter-sheet.open { transform: translateY(0); }
+  .mfs-title { font-size: 13px; font-weight: 500; color: var(--text); margin: 16px 0 14px; }
+  .mfs-group { margin-bottom: 18px; }
+  .mfs-label { font-size: 10px; font-family: var(--mono); color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 8px; }
+  .mfs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mfs-chip { padding: 8px 16px; font-size: 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; font-family: var(--font); }
+  .mfs-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .mfs-select { width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font); }
+  @media (max-width: 600px) {
+    meta[name=viewport] { content: "width=device-width, initial-scale=1.0, maximum-scale=1.0"; }
+    .topnav { padding: 0 12px; height: 44px; }
+    .brand { font-size: 11px; margin-right: 12px; }
+    .tab-btn { padding: 0 12px; font-size: 12px; }
+    .last-sync { display: none; }
+    .sync-btn { display: none; }
+    .toolbar { display: none; }
+    .map-legend { bottom: 90px; left: 8px; }
+    .bottom-sheet { display: block; }
+    .mobile-fab { display: flex; }
+    .mobile-filter-btn { display: flex; }
+    .mobile-filter-sheet { display: block; }
+  }
 </style>
 </head>
 <body>
@@ -429,7 +470,7 @@ function applyFilters() {
       title: f.name,
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
+        scale: isMobile() ? 12 : 8,
         fillColor: color,
         fillOpacity: 1,
         strokeColor: '#ffffff',
@@ -438,25 +479,28 @@ function applyFilters() {
     });
 
     marker.addListener('click', () => {
-      const isPastDue = f.followUp && new Date(f.followUp) < today;
-      const badge = isPastDue
-        ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>`
-        : f.followUp ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>` : '';
-
-      infoWindow.setContent(`
-        <div class="iw-body">
-          <div class="iw-name">${f.name} ${badge}</div>
-          <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned}</span></div>
-          <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${f.lastContact || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
-          <div class="iw-row"><span class="iw-label">Follow-Up Due</span><span class="iw-val">${f.followUp || 'Not set'}</span></div>
-          <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
-          ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
-        </div>
-      `);
-      infoWindow.open(map, marker);
+      if (isMobile()) {
+        openBottomSheet(f);
+      } else {
+        const isPastDue = f.followUp && new Date(f.followUp) < today;
+        const badge = isPastDue
+          ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>`
+          : f.followUp ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>` : '';
+        infoWindow.setContent(`
+          <div class="iw-body">
+            <div class="iw-name">${f.name} ${badge}</div>
+            <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
+            <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
+            <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned}</span></div>
+            <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${f.lastContact || '—'}</span></div>
+            <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
+            <div class="iw-row"><span class="iw-label">Follow-Up Due</span><span class="iw-val">${f.followUp || 'Not set'}</span></div>
+            <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
+            ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
+          </div>
+        `);
+        infoWindow.open(map, marker);
+      }
     });
 
     markers.push(marker);
@@ -578,11 +622,157 @@ function showError(msg) {
   banner.textContent = msg;
   document.querySelector('.main').prepend(banner);
 }
+
+// ── MOBILE FUNCTIONS ──────────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 600;
+
+function openBottomSheet(f) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isPastDue = f.followUp && new Date(f.followUp) < today;
+  const badgeClass = isPastDue ? 'red' : f.followUp ? 'green' : 'gray';
+  const badgeText = isPastDue ? 'PAST DUE' : f.followUp ? 'CURRENT' : 'NO DATE SET';
+
+  document.getElementById('bs-name').textContent = f.name;
+  document.getElementById('bs-badge').innerHTML = `<div class="bs-badge ${badgeClass}">${badgeText}</div>`;
+  document.getElementById('bs-owner').textContent = f.owner || '—';
+  document.getElementById('bs-phone').textContent = f.phone || '—';
+  document.getElementById('bs-assigned').textContent = f.assigned;
+  document.getElementById('bs-status').textContent = f.status || '—';
+  document.getElementById('bs-last').textContent = f.lastContact || '—';
+  document.getElementById('bs-followup').textContent = f.followUp || 'Not set';
+
+  const notesEl = document.getElementById('bs-notes');
+  if (f.notes) {
+    notesEl.textContent = f.notes;
+    notesEl.style.display = 'block';
+  } else {
+    notesEl.style.display = 'none';
+  }
+
+  document.getElementById('bottomSheet').classList.add('open');
+}
+
+function closeBottomSheet() {
+  document.getElementById('bottomSheet').classList.remove('open');
+}
+
+function openMobileFilters() {
+  document.getElementById('mobileFilterSheet').classList.add('open');
+}
+
+function closeMobileFilters() {
+  document.getElementById('mobileFilterSheet').classList.remove('open');
+}
+
+function mobileSetFilter(type, val, btn) {
+  filters[type] = val;
+  btn.closest('.mfs-chips').querySelectorAll('.mfs-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Sync desktop filter chips too
+  document.querySelectorAll('.filter-chip').forEach(b => {
+    if (b.textContent.trim() === (val === 'all' ? 'All' : val)) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  closeMobileFilters();
+  if (map) applyFilters();
+}
+
+function mobileStatusChange() {
+  filters.status = document.getElementById('mobileStatusFilter').value;
+  document.getElementById('statusFilter').value = filters.status;
+  closeMobileFilters();
+  if (map) applyFilters();
+}
+
+function mobileSync() {
+  const fab = document.getElementById('mobileFab');
+  fab.classList.add('syncing');
+  fab.textContent = 'Syncing...';
+  loadData().finally(() => {
+    fab.classList.remove('syncing');
+    fab.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Sync';
+  });
+}
+
+// Keep mobile status filter in sync when populated
+const _origPopulate = populateStatusFilter;
+function populateStatusFilter() {
+  _origPopulate();
+  const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s))].sort();
+  const mSel = document.getElementById('mobileStatusFilter');
+  if (mSel) {
+    mSel.innerHTML = '<option value="all">All Statuses</option>';
+    statuses.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      mSel.appendChild(opt);
+    });
+  }
+}
+
+// Close sheets on map tap
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#mobileFilterSheet') && !e.target.closest('.mobile-filter-btn')) {
+    closeMobileFilters();
+  }
+});
+
 </script>
 
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdj8J2-TVt3qNwaMn9XqR3YDYJAS7wm-Q&callback=initMap">
 </script>
+
+
+<!-- MOBILE BOTTOM SHEET -->
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="bs-handle"></div>
+  <button class="bs-close" onclick="closeBottomSheet()">×</button>
+  <div class="bs-name" id="bs-name"></div>
+  <div id="bs-badge"></div>
+  <div class="bs-grid">
+    <div class="bs-field"><div class="bs-label">OWNER</div><div class="bs-val" id="bs-owner"></div></div>
+    <div class="bs-field"><div class="bs-label">PHONE</div><div class="bs-val" id="bs-phone"></div></div>
+    <div class="bs-field"><div class="bs-label">ASSIGNED</div><div class="bs-val" id="bs-assigned"></div></div>
+    <div class="bs-field"><div class="bs-label">STATUS</div><div class="bs-val" id="bs-status"></div></div>
+    <div class="bs-field"><div class="bs-label">LAST CONTACT</div><div class="bs-val" id="bs-last"></div></div>
+    <div class="bs-field"><div class="bs-label">FOLLOW-UP DUE</div><div class="bs-val" id="bs-followup"></div></div>
+  </div>
+  <div class="bs-notes" id="bs-notes" style="display:none"></div>
+</div>
+
+<!-- MOBILE SYNC FAB -->
+<button class="mobile-fab" id="mobileFab" onclick="mobileSync()">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+  Sync
+</button>
+
+<!-- MOBILE FILTER BUTTON -->
+<button class="mobile-filter-btn" onclick="openMobileFilters()">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+  Filter
+</button>
+
+<!-- MOBILE FILTER SHEET -->
+<div class="mobile-filter-sheet" id="mobileFilterSheet">
+  <div class="bs-handle" onclick="closeMobileFilters()"></div>
+  <div class="mfs-title">Filters</div>
+  <div class="mfs-group">
+    <div class="mfs-label">ASSIGNED TO</div>
+    <div class="mfs-chips">
+      <button class="mfs-chip active" onclick="mobileSetFilter('assigned','all',this)">All</button>
+      <button class="mfs-chip" onclick="mobileSetFilter('assigned','Lance',this)">Lance</button>
+      <button class="mfs-chip" onclick="mobileSetFilter('assigned','Kaleb',this)">Kaleb</button>
+      <button class="mfs-chip" onclick="mobileSetFilter('assigned','Alex',this)">Alex</button>
+    </div>
+  </div>
+  <div class="mfs-group">
+    <div class="mfs-label">STATUS</div>
+    <select class="mfs-select" id="mobileStatusFilter" onchange="mobileStatusChange()">
+      <option value="all">All Statuses</option>
+    </select>
+  </div>
+</div>
 
 </body>
 </html>
