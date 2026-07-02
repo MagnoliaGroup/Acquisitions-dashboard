@@ -144,7 +144,7 @@
   .mfs-chip { padding: 8px 16px; font-size: 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; font-family: var(--font); }
   .mfs-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .mfs-select { width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font); }
-  @media (max-width: 600px) {
+  @media (max-width: 600px), (hover: none) and (pointer: coarse) {
     meta[name=viewport] { content: "width=device-width, initial-scale=1.0, maximum-scale=1.0"; }
     .topnav { padding: 0 12px; height: 44px; }
     .brand { font-size: 11px; margin-right: 12px; }
@@ -426,12 +426,24 @@ function initMap() {
       },
       zIndex: 999
     });
-    // Label
-    new google.maps.InfoWindow({
-      content: `<div style="font-family:monospace;font-size:11px;color:#333;padding:2px 4px">${zone.label}</div>`,
-      position: { lat: zone.lat, lng: zone.lng },
-      disableAutoPan: true
-    }).open(map);
+    // Label marker (non-clickable text pin)
+    new google.maps.Marker({
+      map: map,
+      position: { lat: zone.lat + 0.15, lng: zone.lng },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 0,
+      },
+      label: {
+        text: zone.label,
+        color: '#4ADE80',
+        fontSize: '11px',
+        fontFamily: 'monospace',
+        fontWeight: 'bold'
+      },
+      clickable: false,
+      zIndex: 998
+    });
   });
 
   if (allFacilities.length > 0) startGeocoding();
@@ -624,7 +636,7 @@ function showError(msg) {
 }
 
 // ── MOBILE FUNCTIONS ──────────────────────────────────────────────
-const isMobile = () => window.innerWidth <= 600;
+const isMobile = () => ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 function openBottomSheet(f) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -643,7 +655,7 @@ function openBottomSheet(f) {
 
   const notesEl = document.getElementById('bs-notes');
   if (f.notes) {
-    notesEl.textContent = f.notes;
+    notesEl.textContent = f.notes.replace(/^[A-Z][a-z]{2}\s[A-Z][a-z]{2}\s\d+\s\d{4}[^:]*:\d{2}\s*GMT[^\s]*\s*\([^)]*\)\s*/i, '').trim();
     notesEl.style.display = 'block';
   } else {
     notesEl.style.display = 'none';
