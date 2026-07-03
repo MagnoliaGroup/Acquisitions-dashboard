@@ -21,6 +21,7 @@
     --mono: 'DM Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; max-height: 100%; overflow: hidden; position: fixed; width: 100%; }
   body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
   .topnav { display: flex; align-items: center; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 48px; flex-shrink: 0; }
@@ -447,6 +448,11 @@ function initMap() {
     });
   });
 
+  // Tap map background to close bottom sheet
+  map.addListener('click', () => {
+    closeBottomSheet();
+  });
+
   if (allFacilities.length > 0) startGeocoding();
   else document.getElementById('mapLoading').querySelector('p').textContent = 'Sync data to load map';
 }
@@ -749,6 +755,7 @@ document.addEventListener('click', (e) => {
 <!-- MOBILE BOTTOM SHEET -->
 <div class="bottom-sheet" id="bottomSheet">
   <div class="bs-handle"></div>
+  <div style="text-align:center;font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-bottom:10px;margin-top:-8px">TAP MAP TO CLOSE</div>
   <button class="bs-close" onclick="closeBottomSheet()">×</button>
   <div class="bs-name" id="bs-name"></div>
   <div id="bs-badge"></div>
