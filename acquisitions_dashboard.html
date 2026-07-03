@@ -144,7 +144,7 @@
   .mfs-chip { padding: 8px 16px; font-size: 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; font-family: var(--font); }
   .mfs-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .mfs-select { width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font); }
-  @media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  body.is-mobile {
     meta[name=viewport] { content: "width=device-width, initial-scale=1.0, maximum-scale=1.0"; }
     .topnav { padding: 0 12px; height: 44px; }
     .brand { font-size: 11px; margin-right: 12px; }
@@ -493,6 +493,7 @@ function applyFilters() {
     marker.addListener('click', () => {
       if (isMobile()) {
         openBottomSheet(f);
+        return;
       } else {
         const isPastDue = f.followUp && new Date(f.followUp) < today;
         const badge = isPastDue
@@ -636,9 +637,19 @@ function showError(msg) {
 }
 
 // ── MOBILE FUNCTIONS ──────────────────────────────────────────────
-const isMobile = () => ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+let _isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth <= 900;
+const isMobile = () => _isMobile;
+
+// Apply mobile class to body on load so CSS works
+document.addEventListener('DOMContentLoaded', () => {
+  if (isMobile()) {
+    document.body.classList.add('is-mobile');
+  }
+});
 
 function openBottomSheet(f) {
+  // Close any open Google InfoWindow
+  if (infoWindow) infoWindow.close();
   const today = new Date(); today.setHours(0,0,0,0);
   const isPastDue = f.followUp && new Date(f.followUp) < today;
   const badgeClass = isPastDue ? 'red' : f.followUp ? 'green' : 'gray';
