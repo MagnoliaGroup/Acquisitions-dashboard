@@ -449,9 +449,16 @@ function initMap() {
   });
 
   // Tap map background to close bottom sheet
-  map.addListener('click', () => {
-    closeBottomSheet();
-  });
+  map.addListener('click', () => { closeBottomSheet(); });
+  map.addListener('mousedown', () => { closeBottomSheet(); });
+  
+  // Also catch native touch events on the map div
+  document.getElementById('map').addEventListener('touchstart', (e) => {
+    // Only close if touch is not on a marker (markers have title attributes)
+    if (!e.target.closest('[title]')) {
+      closeBottomSheet();
+    }
+  }, { passive: true });
 
   if (allFacilities.length > 0) startGeocoding();
   else document.getElementById('mapLoading').querySelector('p').textContent = 'Sync data to load map';
