@@ -297,6 +297,7 @@ function populateStatusFilter() {
     opt.value = s; opt.textContent = s;
     sel.appendChild(opt);
   });
+  syncMobileStatusFilter();
 }
 
 // Load geocode cache from localStorage
@@ -718,9 +719,7 @@ function mobileSync() {
 }
 
 // Keep mobile status filter in sync when populated
-const _origPopulate = populateStatusFilter;
-function populateStatusFilter() {
-  _origPopulate();
+function syncMobileStatusFilter() {
   const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s))].sort();
   const mSel = document.getElementById('mobileStatusFilter');
   if (mSel) {
