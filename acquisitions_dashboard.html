@@ -159,6 +159,45 @@
     .mobile-filter-btn { display: flex; }
     .mobile-filter-sheet { display: block; }
   }
+
+  /* ── SIGN IN BUTTON ─────────────────────────────────────────────── */
+  .signin-btn { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); font-family: var(--font); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .signin-btn:hover { border-color: var(--accent); color: var(--text); }
+  .signed-in-indicator { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: rgba(74,140,63,0.1); border: 1px solid rgba(74,140,63,0.3); border-radius: 6px; color: #7EC472; font-family: var(--mono); font-size: 11px; cursor: pointer; }
+  .signed-in-dot { width: 6px; height: 6px; border-radius: 50%; background: #7EC472; flex-shrink: 0; }
+
+  /* ── DESKTOP INFO WINDOW EDIT ───────────────────────────────────── */
+  .iw-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+  .iw-edit-btn { display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-size: 11px; cursor: pointer; flex-shrink: 0; margin-left: 8px; transition: all 0.15s; white-space: nowrap; }
+  .iw-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .iw-edit-btn.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+  /* ── EDIT PANEL (desktop popup + mobile sheet) ───────────────────── */
+  .edit-panel { padding: 14px 16px; min-width: 260px; max-width: 320px; }
+  .edit-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .edit-panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .edit-cancel-btn { font-size: 11px; color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 2px 6px; }
+  .edit-cancel-btn:hover { color: var(--text); }
+  .edit-field { margin-bottom: 12px; }
+  .edit-field-label { font-size: 10px; font-family: var(--mono); color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 5px; }
+  .edit-select { width: 100%; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: var(--font); font-size: 12px; }
+  .edit-existing-notes { background: var(--surface2); border-radius: 6px; padding: 8px 10px; font-size: 11px; color: var(--text-muted); line-height: 1.5; max-height: 80px; overflow-y: auto; margin-bottom: 6px; }
+  .edit-note-hint { font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-bottom: 5px; }
+  .edit-textarea { width: 100%; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--font); font-size: 11px; resize: none; height: 64px; line-height: 1.5; }
+  .edit-textarea:focus { border-color: var(--accent); outline: none; }
+  .edit-save-btn { width: 100%; padding: 9px; background: var(--accent); border: none; border-radius: 6px; color: #fff; font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
+  .edit-save-btn:hover { opacity: 0.85; }
+  .edit-save-btn.saving { opacity: 0.6; pointer-events: none; }
+  .edit-success { background: rgba(74,140,63,0.15); border: 1px solid rgba(74,140,63,0.3); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #7EC472; text-align: center; margin-top: 8px; }
+  .edit-error { background: rgba(217,64,64,0.1); border: 1px solid rgba(217,64,64,0.3); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #F08080; text-align: center; margin-top: 8px; }
+
+  /* ── MOBILE EDIT SHEET ───────────────────────────────────────────── */
+  .bs-edit-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; color: var(--text-muted); font-size: 12px; cursor: pointer; margin: 8px 0 12px; width: fit-content; transition: all 0.15s; }
+  .bs-edit-btn:hover, .bs-edit-btn.active { border-color: var(--accent); color: var(--accent); }
+  .bs-edit-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+  .bs-edit-mode { display: none; }
+  .bs-edit-mode.visible { display: block; }
+  .bs-view-mode.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -169,6 +208,14 @@
   <button class="tab-btn" onclick="showView('dashboard',this)">Dashboard</button>
   <div class="nav-right">
     <span class="last-sync" id="lastSync">Not synced</span>
+    <button class="signin-btn" id="signinBtn" onclick="handleSignIn()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      Sign in to edit
+    </button>
+    <div class="signed-in-indicator" id="signedInIndicator" style="display:none" onclick="handleSignOut()">
+      <div class="signed-in-dot"></div>
+      <span id="signedInEmail"></span>
+    </div>
     <button class="sync-btn" id="syncBtn" onclick="loadData()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
       Sync from Sheets
@@ -505,27 +552,12 @@ function applyFilters() {
     });
 
     marker.addListener('click', () => {
+      currentEditFacility = f;
       if (isMobile()) {
         openBottomSheet(f);
         return;
       } else {
-        const isPastDue = f.followUp && new Date(f.followUp) < today;
-        const badge = isPastDue
-          ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>`
-          : f.followUp ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>` : '';
-        infoWindow.setContent(`
-          <div class="iw-body">
-            <div class="iw-name">${f.name} ${badge}</div>
-            <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
-            <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
-            <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned}</span></div>
-            <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${f.lastContact || '—'}</span></div>
-            <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
-            <div class="iw-row"><span class="iw-label">Follow-Up Due</span><span class="iw-val">${f.followUp || 'Not set'}</span></div>
-            <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
-            ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
-          </div>
-        `);
+        infoWindow.setContent(buildDesktopInfoWindow(f, false));
         infoWindow.open(map, marker);
       }
     });
@@ -752,6 +784,312 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// ── GOOGLE OAUTH + SHEETS WRITE ──────────────────────────────────
+const OAUTH_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_PLACEHOLDER';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const STATUS_OPTIONS = ['Ready to Sell','Might Sell','Not Interested','Do Not Call','Offer Made','We passed'];
+
+let googleAccessToken = null;
+let currentEditFacility = null;
+let currentEditRowIndex = null;
+
+// Load Google Identity Services
+function loadGoogleIdentity() {
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.onload = initGoogleAuth;
+  document.head.appendChild(script);
+}
+loadGoogleIdentity();
+
+let tokenClient = null;
+function initGoogleAuth() {
+  if (typeof google === 'undefined' || !google.accounts) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: OAUTH_CLIENT_ID,
+    scope: SCOPES,
+    callback: (response) => {
+      if (response.error) { console.error(response); return; }
+      googleAccessToken = response.access_token;
+      // Get user email
+      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + googleAccessToken }
+      }).then(r => r.json()).then(info => {
+        document.getElementById('signedInEmail').textContent = info.email;
+        document.getElementById('signinBtn').style.display = 'none';
+        document.getElementById('signedInIndicator').style.display = 'flex';
+        updateEditButtons(true);
+      });
+    }
+  });
+}
+
+function handleSignIn() {
+  if (!tokenClient) { alert('Google sign-in is loading, please try again in a moment.'); return; }
+  tokenClient.requestAccessToken();
+}
+
+function handleSignOut() {
+  if (googleAccessToken) {
+    google.accounts.oauth2.revoke(googleAccessToken, () => {});
+    googleAccessToken = null;
+  }
+  document.getElementById('signinBtn').style.display = 'flex';
+  document.getElementById('signedInIndicator').style.display = 'none';
+  updateEditButtons(false);
+}
+
+function updateEditButtons(signedIn) {
+  // Mobile edit button
+  const bsEditBtn = document.getElementById('bs-edit-btn');
+  const bsEditLabel = document.getElementById('bs-edit-btn-label');
+  if (signedIn) {
+    bsEditBtn.classList.remove('disabled');
+    bsEditBtn.classList.add('active');
+    if (bsEditLabel) bsEditLabel.textContent = 'Edit this facility';
+  } else {
+    bsEditBtn.classList.add('disabled');
+    bsEditBtn.classList.remove('active');
+    if (bsEditLabel) bsEditLabel.textContent = 'Sign in to edit';
+  }
+}
+
+// Find the row number for a facility in its sheet (1-indexed, +1 for header)
+async function findFacilityRow(facility) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(facility.assigned)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+  const rows = json.table.rows;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (row.c && row.c[0] && row.c[0].v) {
+      const rowName = String(row.c[0].v).trim();
+      const rowAddr = row.c[1] ? String(row.c[1].v || '').trim() : '';
+      if (rowName === facility.name && rowAddr === facility.address) {
+        return i + 2; // +1 for 0-index, +1 for header row
+      }
+    }
+  }
+  return null;
+}
+
+async function writeToSheet(facility, newStatus, newNoteText) {
+  const rowNum = await findFacilityRow(facility);
+  if (!rowNum) throw new Error('Could not find this facility in the sheet.');
+
+  const today = new Date();
+  const dateStr = (today.getMonth()+1) + '/' + today.getDate() + '/' + String(today.getFullYear()).slice(2);
+  const requests = [];
+
+  // Status is column K = index 10 = column 11
+  if (newStatus && newStatus !== facility.status) {
+    requests.push({
+      range: `${facility.assigned}!K${rowNum}`,
+      values: [[newStatus]]
+    });
+  }
+
+  // Notes is column L = index 11 = column 12
+  if (newNoteText && newNoteText.trim()) {
+    const existingNotes = facility.notes || '';
+    const appendedNote = existingNotes
+      ? existingNotes + '\n' + dateStr + '- ' + newNoteText.trim()
+      : dateStr + '- ' + newNoteText.trim();
+    requests.push({
+      range: `${facility.assigned}!L${rowNum}`,
+      values: [[appendedNote]]
+    });
+  }
+
+  if (requests.length === 0) throw new Error('No changes to save.');
+
+  // Batch update
+  const body = { valueInputOption: 'RAW', data: requests };
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + googleAccessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Write failed');
+  }
+
+  // Update local data so map reflects change immediately
+  if (newStatus) facility.status = newStatus;
+  if (newNoteText && newNoteText.trim()) {
+    const today2 = new Date();
+    const ds2 = (today2.getMonth()+1) + '/' + today2.getDate() + '/' + String(today2.getFullYear()).slice(2);
+    facility.notes = facility.notes
+      ? facility.notes + '\n' + ds2 + '- ' + newNoteText.trim()
+      : ds2 + '- ' + newNoteText.trim();
+  }
+
+  return true;
+}
+
+// ── DESKTOP EDIT FLOW ─────────────────────────────────────────────
+function buildDesktopInfoWindow(f, editMode) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isPastDue = f.followUp && new Date(f.followUp) < today;
+  const badge = isPastDue
+    ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(217,64,64,0.2);color:#F08080;border:1px solid rgba(217,64,64,0.3)">PAST DUE</span>`
+    : f.followUp ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:rgba(74,140,63,0.2);color:#7EC472;border:1px solid rgba(74,140,63,0.3)">CURRENT</span>` : '';
+
+  if (editMode) {
+    const opts = STATUS_OPTIONS.map(s =>
+      `<option value="${s}" ${s === f.status ? 'selected' : ''}>${s}</option>`
+    ).join('');
+    return `
+      <div class="edit-panel">
+        <div class="edit-panel-header">
+          <div class="edit-panel-title">Edit — ${f.name}</div>
+          <button class="edit-cancel-btn" onclick="showDesktopView()">Cancel</button>
+        </div>
+        <div class="edit-field">
+          <div class="edit-field-label">STATUS</div>
+          <select class="edit-select" id="desktop-status-select"><option value="">— select —</option>${opts}</select>
+        </div>
+        <div class="edit-field">
+          <div class="edit-field-label">EXISTING NOTES</div>
+          <div class="edit-existing-notes">${f.notes || '(no notes yet)'}</div>
+        </div>
+        <div class="edit-field">
+          <div class="edit-note-hint">ADD NOTE (appended with today's date)</div>
+          <textarea class="edit-textarea" id="desktop-new-note" placeholder="Type new note here..."></textarea>
+        </div>
+        <button class="edit-save-btn" id="desktop-save-btn" onclick="saveDesktopEdit()">Save to Google Sheets</button>
+        <div id="desktop-save-result"></div>
+      </div>`;
+  }
+
+  const editBtnClass = googleAccessToken ? 'iw-edit-btn' : 'iw-edit-btn disabled';
+  const editBtnTitle = googleAccessToken ? 'Edit this facility' : 'Sign in to edit';
+  return `
+    <div class="iw-body">
+      <div class="iw-header">
+        <div>
+          <div class="iw-name">${f.name} ${badge}</div>
+        </div>
+        <button class="${editBtnClass}" onclick="openDesktopEdit()" title="${editBtnTitle}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          ✏️ Edit
+        </button>
+      </div>
+      <div class="iw-row"><span class="iw-label">Owner</span><span class="iw-val">${f.owner || '—'}</span></div>
+      <div class="iw-row"><span class="iw-label">Phone</span><span class="iw-val">${f.phone || '—'}</span></div>
+      <div class="iw-row"><span class="iw-label">Assigned</span><span class="iw-val">${f.assigned}</span></div>
+      <div class="iw-row"><span class="iw-label">Last Contact</span><span class="iw-val">${f.lastContact || '—'}</span></div>
+      <div class="iw-row"><span class="iw-label">Contact Was</span><span class="iw-val">${f.contactWas || '—'}</span></div>
+      <div class="iw-row"><span class="iw-label">Follow-Up Due</span><span class="iw-val">${f.followUp || 'Not set'}</span></div>
+      <div class="iw-row"><span class="iw-label">Status</span><span class="iw-val">${f.status || '—'}</span></div>
+      ${f.notes ? `<div class="iw-notes">${f.notes}</div>` : ''}
+    </div>`;
+}
+
+function openDesktopEdit() {
+  if (!googleAccessToken) return;
+  infoWindow.setContent(buildDesktopInfoWindow(currentEditFacility, true));
+}
+
+function showDesktopView() {
+  infoWindow.setContent(buildDesktopInfoWindow(currentEditFacility, false));
+}
+
+async function saveDesktopEdit() {
+  const btn = document.getElementById('desktop-save-btn');
+  const resultEl = document.getElementById('desktop-save-result');
+  const newStatus = document.getElementById('desktop-status-select').value;
+  const newNote = document.getElementById('desktop-new-note').value;
+
+  btn.classList.add('saving');
+  btn.textContent = 'Saving...';
+  resultEl.innerHTML = '';
+
+  try {
+    await writeToSheet(currentEditFacility, newStatus, newNote);
+    resultEl.innerHTML = '<div class="edit-success">✓ Saved successfully!</div>';
+    btn.textContent = 'Save to Google Sheets';
+    btn.classList.remove('saving');
+    setTimeout(() => {
+      infoWindow.setContent(buildDesktopInfoWindow(currentEditFacility, false));
+      applyFilters(); // refresh pin colors
+    }, 1200);
+  } catch(e) {
+    resultEl.innerHTML = `<div class="edit-error">Error: ${e.message}</div>`;
+    btn.textContent = 'Save to Google Sheets';
+    btn.classList.remove('saving');
+  }
+}
+
+// ── MOBILE EDIT FLOW ──────────────────────────────────────────────
+function openMobileEdit() {
+  if (!googleAccessToken) { handleSignIn(); return; }
+  if (!currentEditFacility) return;
+  const f = currentEditFacility;
+
+  document.getElementById('bs-edit-title').textContent = 'Edit — ' + f.name;
+
+  // Set status dropdown
+  const sel = document.getElementById('bs-status-select');
+  sel.value = f.status || '';
+
+  // Set existing notes
+  document.getElementById('bs-existing-notes').textContent = f.notes || '(no notes yet)';
+  document.getElementById('bs-new-note').value = '';
+  document.getElementById('bs-save-result').innerHTML = '';
+
+  document.getElementById('bs-view-mode').classList.add('hidden');
+  document.getElementById('bs-edit-mode').classList.add('visible');
+}
+
+function closeMobileEdit() {
+  document.getElementById('bs-view-mode').classList.remove('hidden');
+  document.getElementById('bs-edit-mode').classList.remove('visible');
+}
+
+async function saveMobileEdit() {
+  const btn = document.getElementById('bs-save-btn');
+  const resultEl = document.getElementById('bs-save-result');
+  const newStatus = document.getElementById('bs-status-select').value;
+  const newNote = document.getElementById('bs-new-note').value;
+
+  btn.classList.add('saving');
+  btn.textContent = 'Saving...';
+  resultEl.innerHTML = '';
+
+  try {
+    await writeToSheet(currentEditFacility, newStatus, newNote);
+    resultEl.innerHTML = '<div class="edit-success">✓ Saved to Google Sheets!</div>';
+    btn.textContent = 'Save to Google Sheets';
+    btn.classList.remove('saving');
+
+    // Update the view panel to show new values
+    document.getElementById('bs-status').textContent = currentEditFacility.status || '—';
+    if (document.getElementById('bs-notes')) {
+      document.getElementById('bs-notes').textContent = currentEditFacility.notes || '';
+      document.getElementById('bs-notes').style.display = currentEditFacility.notes ? 'block' : 'none';
+    }
+
+    setTimeout(() => {
+      closeMobileEdit();
+      applyFilters();
+    }, 1200);
+  } catch(e) {
+    resultEl.innerHTML = `<div class="edit-error">Error: ${e.message}</div>`;
+    btn.textContent = 'Save to Google Sheets';
+    btn.classList.remove('saving');
+  }
+}
+
 </script>
 
 <script async defer
@@ -766,15 +1104,51 @@ document.addEventListener('click', (e) => {
   <button class="bs-close" onclick="closeBottomSheet()">×</button>
   <div class="bs-name" id="bs-name"></div>
   <div id="bs-badge"></div>
-  <div class="bs-grid">
-    <div class="bs-field"><div class="bs-label">OWNER</div><div class="bs-val" id="bs-owner"></div></div>
-    <div class="bs-field"><div class="bs-label">PHONE</div><div class="bs-val" id="bs-phone"></div></div>
-    <div class="bs-field"><div class="bs-label">ASSIGNED</div><div class="bs-val" id="bs-assigned"></div></div>
-    <div class="bs-field"><div class="bs-label">STATUS</div><div class="bs-val" id="bs-status"></div></div>
-    <div class="bs-field"><div class="bs-label">LAST CONTACT</div><div class="bs-val" id="bs-last"></div></div>
-    <div class="bs-field"><div class="bs-label">FOLLOW-UP DUE</div><div class="bs-val" id="bs-followup"></div></div>
+  <!-- VIEW MODE -->
+  <div class="bs-view-mode" id="bs-view-mode">
+    <button class="bs-edit-btn disabled" id="bs-edit-btn" onclick="openMobileEdit()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      <span id="bs-edit-btn-label">Sign in to edit</span>
+    </button>
+    <div class="bs-grid">
+      <div class="bs-field"><div class="bs-label">OWNER</div><div class="bs-val" id="bs-owner"></div></div>
+      <div class="bs-field"><div class="bs-label">PHONE</div><div class="bs-val" id="bs-phone"></div></div>
+      <div class="bs-field"><div class="bs-label">ASSIGNED</div><div class="bs-val" id="bs-assigned"></div></div>
+      <div class="bs-field"><div class="bs-label">STATUS</div><div class="bs-val" id="bs-status"></div></div>
+      <div class="bs-field"><div class="bs-label">LAST CONTACT</div><div class="bs-val" id="bs-last"></div></div>
+      <div class="bs-field"><div class="bs-label">FOLLOW-UP DUE</div><div class="bs-val" id="bs-followup"></div></div>
+    </div>
+    <div class="bs-notes" id="bs-notes" style="display:none"></div>
   </div>
-  <div class="bs-notes" id="bs-notes" style="display:none"></div>
+  <!-- EDIT MODE -->
+  <div class="bs-edit-mode" id="bs-edit-mode">
+    <div class="edit-panel-header" style="margin-bottom:12px">
+      <div class="edit-panel-title" id="bs-edit-title">Edit Facility</div>
+      <button class="edit-cancel-btn" onclick="closeMobileEdit()">Cancel</button>
+    </div>
+    <div class="edit-field">
+      <div class="edit-field-label">STATUS</div>
+      <select class="edit-select" id="bs-status-select">
+        <option value="">— select —</option>
+        <option>Ready to Sell</option>
+        <option>Might Sell</option>
+        <option>Not Interested</option>
+        <option>Do Not Call</option>
+        <option>Offer Made</option>
+        <option>We passed</option>
+      </select>
+    </div>
+    <div class="edit-field">
+      <div class="edit-field-label">EXISTING NOTES</div>
+      <div class="edit-existing-notes" id="bs-existing-notes"></div>
+    </div>
+    <div class="edit-field">
+      <div class="edit-note-hint">ADD NOTE (appended with today's date)</div>
+      <textarea class="edit-textarea" id="bs-new-note" placeholder="Type new note here..."></textarea>
+    </div>
+    <button class="edit-save-btn" id="bs-save-btn" onclick="saveMobileEdit()">Save to Google Sheets</button>
+    <div id="bs-save-result"></div>
+  </div>
 </div>
 
 <!-- MOBILE SYNC FAB -->
