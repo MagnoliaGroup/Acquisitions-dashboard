@@ -235,9 +235,9 @@
       </div>
       <div class="divider"></div>
       <span class="filter-label">STATUS</span>
-      <select class="status-select" id="statusFilter" onchange="applyFilters()">
-        <option value="all">All Statuses</option>
-      </select>
+      <div class="filter-group" id="statusChips">
+        <button class="filter-chip active" onclick="toggleStatusChip(this,'all')">All</button>
+      </div>
       <div class="map-stats">
         <div class="map-stat"><span class="val" id="stat-showing">—</span> <span class="lbl">shown</span></div>
         <div class="map-stat"><span class="val" id="stat-pastdue" style="color:var(--red)">—</span> <span class="lbl">past due</span></div>
@@ -336,16 +336,80 @@ async function loadData() {
   btn.classList.remove('syncing');
 }
 
+let hiddenStatuses = new Set(); // statuses to HIDE
+
 function populateStatusFilter() {
   const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s))].sort();
-  const sel = document.getElementById('statusFilter');
-  sel.innerHTML = '<option value="all">All Statuses</option>';
+  
+  // Desktop chips
+  const chipsEl = document.getElementById('statusChips');
+  chipsEl.innerHTML = '<button class="filter-chip active" onclick="toggleStatusChip(this,\'all\')">All</button>';
   statuses.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    sel.appendChild(opt);
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip active';
+    btn.textContent = s;
+    btn.onclick = function() { toggleStatusChip(this, s); };
+    chipsEl.appendChild(btn);
   });
-  syncMobileStatusFilter();
+
+  // Mobile chips
+  const mChipsEl = document.getElementById('mobileStatusChips');
+  mChipsEl.innerHTML = '<button class="mfs-chip active" onclick="mobileToggleStatus(this,\'all\')">All</button>';
+  statuses.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'mfs-chip active';
+    btn.textContent = s;
+    btn.onclick = function() { mobileToggleStatus(this, s); };
+    mChipsEl.appendChild(btn);
+  });
+}
+
+function toggleStatusChip(btn, status) {
+  if (status === 'all') {
+    // Turn all on
+    hiddenStatuses.clear();
+    document.querySelectorAll('#statusChips .filter-chip').forEach(b => b.classList.add('active'));
+    document.querySelectorAll('#mobileStatusChips .mfs-chip').forEach(b => b.classList.add('active'));
+  } else {
+    // Toggle this status
+    if (hiddenStatuses.has(status)) {
+      hiddenStatuses.delete(status);
+      btn.classList.add('active');
+    } else {
+      hiddenStatuses.add(status);
+      btn.classList.remove('active');
+    }
+    // Sync mobile
+    document.querySelectorAll('#mobileStatusChips .mfs-chip').forEach(b => {
+      if (b.textContent === status) {
+        hiddenStatuses.has(status) ? b.classList.remove('active') : b.classList.add('active');
+      }
+    });
+  }
+  applyFilters();
+}
+
+function mobileToggleStatus(btn, status) {
+  if (status === 'all') {
+    hiddenStatuses.clear();
+    document.querySelectorAll('#mobileStatusChips .mfs-chip').forEach(b => b.classList.add('active'));
+    document.querySelectorAll('#statusChips .filter-chip').forEach(b => b.classList.add('active'));
+  } else {
+    if (hiddenStatuses.has(status)) {
+      hiddenStatuses.delete(status);
+      btn.classList.add('active');
+    } else {
+      hiddenStatuses.add(status);
+      btn.classList.remove('active');
+    }
+    // Sync desktop
+    document.querySelectorAll('#statusChips .filter-chip').forEach(b => {
+      if (b.textContent === status) {
+        hiddenStatuses.has(status) ? b.classList.remove('active') : b.classList.add('active');
+      }
+    });
+  }
+  if (map) applyFilters();
 }
 
 // Load geocode cache from localStorage
@@ -522,7 +586,7 @@ function applyFilters() {
   filters.status = document.getElementById('statusFilter').value;
   const visible = allFacilities.filter(f => {
     const assignedOk = filters.assigned === 'all' || f.assigned === filters.assigned;
-    const statusOk = filters.status === 'all' || f.status === filters.status;
+    const statusOk = !hiddenStatuses.has(f.status);
     return assignedOk && statusOk;
   });
 
@@ -746,12 +810,7 @@ function mobileSetFilter(type, val, btn) {
   if (map) applyFilters();
 }
 
-function mobileStatusChange() {
-  filters.status = document.getElementById('mobileStatusFilter').value;
-  document.getElementById('statusFilter').value = filters.status;
-  closeMobileFilters();
-  if (map) applyFilters();
-}
+
 
 function mobileSync() {
   const fab = document.getElementById('mobileFab');
@@ -763,19 +822,7 @@ function mobileSync() {
   });
 }
 
-// Keep mobile status filter in sync when populated
-function syncMobileStatusFilter() {
-  const statuses = [...new Set(allFacilities.map(f => f.status).filter(s => s))].sort();
-  const mSel = document.getElementById('mobileStatusFilter');
-  if (mSel) {
-    mSel.innerHTML = '<option value="all">All Statuses</option>';
-    statuses.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s; opt.textContent = s;
-      mSel.appendChild(opt);
-    });
-  }
-}
+
 
 // Close sheets on map tap
 document.addEventListener('click', (e) => {
@@ -1177,10 +1224,10 @@ async function saveMobileEdit() {
     </div>
   </div>
   <div class="mfs-group">
-    <div class="mfs-label">STATUS</div>
-    <select class="mfs-select" id="mobileStatusFilter" onchange="mobileStatusChange()">
-      <option value="all">All Statuses</option>
-    </select>
+    <div class="mfs-label">STATUS — tap to hide/show</div>
+    <div class="mfs-chips" id="mobileStatusChips">
+      <button class="mfs-chip active" onclick="mobileToggleStatus(this,'all')">All</button>
+    </div>
   </div>
 </div>
 
