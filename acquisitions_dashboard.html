@@ -583,7 +583,6 @@ function pinColor(f) {
 }
 
 function applyFilters() {
-  filters.status = document.getElementById('statusFilter').value;
   const visible = allFacilities.filter(f => {
     const assignedOk = filters.assigned === 'all' || f.assigned === filters.assigned;
     const statusOk = hiddenStatuses.size === 0 || !hiddenStatuses.has(f.status || '');
